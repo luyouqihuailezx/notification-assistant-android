@@ -49,35 +49,43 @@
         tools:targetApi="tiramisu">
         <activity
             android:name=".activities.otheractivity.ImportActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.WebViewActivity"
             android:exported="false"
-            android:label="@string/licenses" />
+            android:label="@string/licenses"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.AboutActivity"
             android:exported="false"
-            android:label="@string/about" />
+            android:label="@string/about"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.PermissionsActivity"
             android:exported="false"
-            android:label="@string/permissions" />
+            android:label="@string/permissions"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.specificactivity.SpecificGraphActivity"
             android:exported="false"
-            android:label="@string/info_specific_graph" />
+            android:label="@string/info_specific_graph"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.PieGraphActivity"
             android:exported="false"
-            android:label="@string/graph" />
+            android:label="@string/graph"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.adaptersactivity.IsChatActivity"
             android:exported="false"
-            android:label="@string/isChatActivity" />
+            android:label="@string/isChatActivity"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.SettingsActivity"
             android:exported="false"
-            android:label="@string/settings" />
+            android:label="@string/settings"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.onboarding.OnboardingActivity"
             android:exported="false"
@@ -90,35 +98,43 @@
         <activity
             android:name=".activities.adaptersactivity.BlackWhiteListActivity"
             android:exported="false"
-            android:label="@string/notification_collection_apps" />
+            android:label="@string/notification_collection_apps"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.SearchActivity"
             android:exported="false"
-            android:label="@string/advanced_search" />
+            android:label="@string/advanced_search"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.AllNotificationsActivity"
             android:exported="false"
-            android:label="@string/all_notification" />
+            android:label="@string/all_notification"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.ChatsActivity"
             android:exported="false"
-            android:label="@string/chat" />
+            android:label="@string/chat"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.GroupChatActivity"
             android:exported="false"
-            android:label="@string/group_chat" />
+            android:label="@string/group_chat"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.home.DeletedNotificationsActivity"
             android:exported="false"
-            android:label="@string/deleted_notification" />
+            android:label="@string/deleted_notification"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.adaptersactivity.ListSearchActivity"
             android:exported="false"
-            android:label="@string/search" />
+            android:label="@string/search"
+            android:screenOrientation="behind" />
         <activity
             android:name=".jetpackactivities.ChatUIActivity"
             android:exported="false"
-            android:label="@string/chat" />
+            android:label="@string/chat"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.MainActivity"
             android:exported="true"
@@ -172,7 +188,8 @@
         </receiver>
         <receiver
             android:name=".services.NotificationListenerHealthCheckReceiver"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="behind" />
 
         <service
             android:name=".services.NotificationListenerServiceImpl"
