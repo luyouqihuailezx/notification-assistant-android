@@ -16,3 +16,4 @@ actions:
     command: ./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk
     cwd: .
     group: 构建
+    confirm: 确认编译并安装 APK 到已连接的 ADB 设备？
