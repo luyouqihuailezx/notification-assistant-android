@@ -55,6 +55,10 @@
             android:exported="false"
             android:label="@string/about" />
         <activity
+            android:name=".activities.home.PermissionsActivity"
+            android:exported="false"
+            android:label="@string/permissions" />
+        <activity
             android:name=".activities.specificactivity.SpecificGraphActivity"
             android:exported="false"
             android:label="@string/info_specific_graph" />

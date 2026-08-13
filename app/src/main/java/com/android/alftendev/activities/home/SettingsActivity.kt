@@ -1,16 +1,12 @@
 package com.android.alftendev.activities.home
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import com.android.alftendev.BuildConfig
-import com.android.alftendev.MyApplication
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.adaptersactivity.BlackWhiteListActivity
@@ -18,7 +14,6 @@ import com.android.alftendev.activities.otheractivity.ImportActivity
 import com.android.alftendev.utils.AuthUtils.askAuth
 import com.android.alftendev.utils.DialogUtils.askPasswordForZipDialog
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
-import com.android.alftendev.utils.PermissionUtils
 import com.android.alftendev.utils.UiUtils
 import com.android.alftendev.utils.UiUtils.setTheme
 import com.android.alftendev.utils.UiUtils.uiDefaultSettings
@@ -52,7 +47,11 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
             bindServiceSwitch()
-            bindPermissions()
+            findPreference<Preference>("open_permissions")?.onPreferenceClickListener =
+                Preference.OnPreferenceClickListener {
+                    startActivity(Intent(requireContext(), PermissionsActivity::class.java))
+                    true
+                }
             findPreference<Preference>("open_collection_apps")?.onPreferenceClickListener =
                 Preference.OnPreferenceClickListener {
                     startActivity(Intent(requireContext(), BlackWhiteListActivity::class.java))
@@ -75,11 +74,6 @@ class SettingsActivity : AppCompatActivity() {
                 }
         }
 
-        override fun onResume() {
-            super.onResume()
-            bindPermissions()
-        }
-
         private fun bindServiceSwitch() {
             findPreference<SwitchPreferenceCompat>(RECORD_NOTIFICATIONS_ENABLED)?.apply {
                 isChecked = requireContext().getSharedPreferences(sharedPrefName, MODE_PRIVATE)
@@ -93,24 +87,5 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun bindPermissions() {
-            findPreference<Preference>("notification_listener_access")?.apply {
-                summary = permissionSummary(PermissionUtils.isNotificationServiceEnabled(requireContext()))
-                onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    PermissionUtils.openNotificationListenerSettings(requireContext())
-                    true
-                }
-            }
-            findPreference<Preference>("app_list_access")?.apply {
-                summary = permissionSummary(PermissionUtils.canReadInstalledApps(requireContext()))
-                onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    PermissionUtils.openAppDetailsSettings(requireContext())
-                    true
-                }
-            }
-        }
-
-        private fun permissionSummary(granted: Boolean): String =
-            "${getString(if (granted) R.string.enabled else R.string.disabled)} · ${getString(R.string.go_to_settings)}"
     }
 }

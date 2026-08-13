@@ -1,65 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardApp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_margin="6dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp">
 
-    <androidx.cardview.widget.CardView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-            android:layout_margin="6dp"
-        app:cardBackgroundColor="?cardBackgroundColor"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="2dp"
-        app:strokeWidth="1dp">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/ivBlacklist"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:layout_marginTop="12dp"
                 android:contentDescription="@string/icon"
-                android:visibility="visible"
                 tools:srcCompat="@tools:sample/avatars" />
 
-            <LinearLayout
-                android:id="@+id/llCustomBlacklistCard"
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvPackageName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
                 android:gravity="center"
-                android:orientation="horizontal">
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvPackageName"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:text="@string/textview"
-                    android:textColor="?android:textColor"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/swIsBlackListed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/selected"
-                tools:ignore="UseSwitchCompatOrMaterialXml" />
+                android:maxLines="2"
+                android:paddingHorizontal="8dp"
+                android:textColor="?android:textColor"
+                android:textSize="14sp"
+                android:textStyle="bold" />
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
 
-</LinearLayout>
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/swIsBlackListed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:contentDescription="@string/selected"
+            android:minWidth="48dp"
+            android:minHeight="48dp" />
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

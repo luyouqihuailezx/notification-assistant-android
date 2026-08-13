@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ems="10"
-            android:hint="@string/search"
+            android:hint="@string/search_apps"
             android:inputType="textPersonName"
             android:minHeight="52sp"
             android:textColorHint="@color/text_color_white" />
@@ -35,6 +35,7 @@
             android:contentDescription="@string/select_all"
             android:padding="8dp"
             android:src="@drawable/baseline_settings_24"
+            android:tint="?android:textColorPrimary"
             app:icon="@drawable/baseline_settings_24" />
     </LinearLayout>
 

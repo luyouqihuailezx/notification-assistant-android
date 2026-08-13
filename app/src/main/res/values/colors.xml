@@ -19,4 +19,5 @@
 
     <color name="text_color_black">#212121</color>
     <color name="text_color_white">#FFFFFF</color>
+    <color name="collection_app_selected">#D6E7FF</color>
 </resources>

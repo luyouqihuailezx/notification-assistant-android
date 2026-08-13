@@ -5,8 +5,9 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CompoundButton
 import android.widget.ImageView
-import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
@@ -14,6 +15,7 @@ import com.android.alftendev.models.PackageName
 import com.android.alftendev.utils.DBUtils
 import com.android.alftendev.utils.computables.AppIcon
 import com.android.alftendev.utils.computables.PackageSettingsCache
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 
 class BlackWhitelistAdapter(
@@ -38,8 +40,9 @@ class BlackWhitelistAdapter(
 
     class AppHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: MaterialTextView = view.findViewById(R.id.tvPackageName)
-        val selected: SwitchCompat = view.findViewById(R.id.swIsBlackListed)
+        val selected: CompoundButton = view.findViewById(R.id.swIsBlackListed)
         val icon: ImageView = view.findViewById(R.id.ivBlacklist)
+        val card: MaterialCardView = view.findViewById(R.id.cardApp)
     }
 
     class HeaderHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -66,15 +69,11 @@ class BlackWhitelistAdapter(
         holder.name.text = item.name?.takeIf { it.isNotBlank() } ?: item.pkg
         holder.selected.setOnCheckedChangeListener(null)
         holder.selected.isChecked = item.isWhiteList
-        holder.selected.text = holder.itemView.context.getString(
-            if (item.isWhiteList) R.string.selected else R.string.not_selected
-        )
+        setSelectedBackground(holder, item.isWhiteList)
         holder.selected.setOnCheckedChangeListener { button, checked ->
             if (!button.isPressed) return@setOnCheckedChangeListener
             item.isWhiteList = checked
-            holder.selected.text = holder.itemView.context.getString(
-                if (checked) R.string.selected else R.string.not_selected
-            )
+            setSelectedBackground(holder, checked)
             MyApplication.executor.execute {
                 val entity = DBUtils.getPackageName(item.pkg) ?: item
                 entity.isWhiteList = checked
@@ -93,6 +92,18 @@ class BlackWhitelistAdapter(
             }
         }
         holder.itemView.setOnClickListener { holder.selected.performClick() }
+    }
+
+    private fun setSelectedBackground(holder: AppHolder, selected: Boolean) {
+        val color = if (selected) {
+            ContextCompat.getColor(holder.itemView.context, R.color.collection_app_selected)
+        } else {
+            com.google.android.material.color.MaterialColors.getColor(
+                holder.card,
+                com.google.android.material.R.attr.colorSurface
+            )
+        }
+        holder.card.setCardBackgroundColor(color)
     }
 
     override fun getItemCount() = rows.size

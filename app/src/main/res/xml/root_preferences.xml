@@ -5,15 +5,9 @@
             app:key="isRecordNotificationEnabled"
             app:summary="@string/notification_assistant_service_summary"
             app:title="@string/notification_assistant_service" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/permissions">
         <Preference
-            app:key="notification_listener_access"
-            app:title="@string/notification_listener_access" />
-        <Preference
-            app:key="app_list_access"
-            app:title="@string/app_list_access" />
+            app:key="open_permissions"
+            app:title="@string/permissions" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/notification_collection_apps">
