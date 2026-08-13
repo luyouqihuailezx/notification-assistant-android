@@ -1,0 +1,164 @@
+<resources>
+    <string name="app_name">通知历史</string>
+    <string name="show_chat">显示为聊天</string>
+    <string name="blacklist_auto">屏蔽系统应用</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="back">返回</string>
+    <string name="blacklist_reset_confirm">确定要重置黑名单吗？</string>
+    <string name="whitelist_reset_confirm">确定要重置白名单吗？</string>
+
+    <string name="isAutoBlacklistOn" translatable="false">isAutoBlacklistOn</string>
+    <string name="isNotificationEnabled" translatable="false">isNotificationEnabled</string>
+
+    <string name="all_notification">通知历史</string>
+    <string name="deleted_notification">已删除通知</string>
+    <string name="advanced_search">高级搜索</string>
+    <string name="chat">聊天</string>
+    <string name="group_chat">群聊</string>
+    <string name="isChatActivity">聊天应用</string>
+    <string name="isChatApp">聊天应用</string>
+
+    <string name="title_text">标题/正文</string>
+    <string name="deleted">已删除</string>
+    <string name="search">搜索通知</string>
+
+    <string name="icon" translatable="false">icon</string>
+
+    <string name="textview" translatable="false">TextView</string>
+    <string name="ask_not_permission">为记录你收到的通知，本应用需要访问并仅在本机保存通知内容。数据不会共享给第三方，你可以随时删除。\n你可在应用设置中随时关闭通知收集。\n启用此功能即表示你同意在本机处理通知数据。详情请参阅隐私政策。</string>
+    <string name="ask_not_permission_setting_summary">为记录你收到的通知，本应用需要访问并仅在本机保存通知内容。数据不会共享给第三方，你可以随时删除。启用此功能即表示你同意在本机处理通知数据。详情请参阅隐私政策。</string>
+    <string name="notification_name">通知已移除</string>
+    <string name="notification_title">通知已删除</string>
+
+    <string name="others">其他</string>
+
+    <string name="open_app">打开应用</string>
+
+    <string name="blacklist">黑名单</string>
+    <string name="settings">设置</string>
+    <string name="notification_history">通知历史</string>
+    <string name="reset_blacklist">重置黑名单</string>
+    <string name="enable_notification">启用通知提醒</string>
+    <string name="blacklist_info">已启用的黑名单应用将被通知监听器忽略</string>
+    <string name="notification_count">通知数量：</string>
+    <string name="version">版本</string>
+    <string name="rating">评价应用</string>
+    <string name="open_blacklist">打开黑名单</string>
+    <string name="notifications">通知</string>
+    <string name="theme">主题</string>
+    <string name="info">关于</string>
+    <string name="info_specific_graph">关于（测试版）</string>
+    <string name="chat_title">聊天应用</string>
+    <string name="chat_summary">标记为聊天的应用会显示在应用的“聊天”部分</string>
+    <string name="notification_summary">当应用发现设备收到的通知被清除时，会发送提醒；可能出现误报。</string>
+
+    <string name="defaultSwitchValue">所有应用</string>
+    <string name="null_value">"未捕获到文本"</string>
+    <string name="github" translatable="false">GitHub</string>
+
+    <string name="appName">应用名称：</string>
+    <string name="text">正文：</string>
+    <string name="date">日期：</string>
+    <string name="conversationTitle">会话标题：</string>
+    <string name="titleBig">扩展标题：</string>
+    <string name="textBig">扩展正文：</string>
+    <string name="infoText">信息文本：</string>
+    <string name="peopleList">联系人列表：</string>
+    <string name="isDeleted">已删除：</string>
+    <string name="graph">图表（测试版）</string>
+
+    <string name="authErr">认证错误</string>
+    <string name="authFail">认证失败</string>
+    <string name="authSuccess">认证成功</string>
+    <string name="authInfo">生物识别或 PIN 认证</string>
+    <string name="security">安全</string>
+    <string name="authNoEnrolled">未设置设备凭据或生物识别信息，无法认证</string>
+    <string name="biometricUnavailable">此设备没有可用的生物识别功能</string>
+    <string name="biometricCurrentlyUnavailable">生物识别功能暂时不可用</string>
+    <string name="biometricError">生物识别传感器错误</string>
+    <string name="biometricUnsupported">生物识别认证需要 Android 11 或更高版本</string>
+    <string name="reauth">再次认证</string>
+    <string name="continuee">进入通知历史</string>
+    <string name="biometric_title">认证后访问应用</string>
+    <string name="cancel">取消</string>
+    <string name="name_of_app_selected_is_missing">缺少所选应用的名称</string>
+    <string name="more_info">更多信息</string>
+    <string name="system">跟随系统</string>
+    <string name="dark">深色</string>
+    <string name="light">浅色</string>
+    <string name="change_theme">更改主题</string>
+    <string name="theme_changed">主题已更改，应用将重新加载</string>
+    <string name="open_source_licenses">开源许可证</string>
+    <string name="MPAndroidChart_license">MPAndroidChart 许可证</string>
+    <string name="app_license">应用许可证</string>
+    <string name="licenses">许可证</string>
+    <string name="notification_permission">通知权限</string>
+    <string name="enabled">已启用</string>
+    <string name="disabled">未启用</string>
+    <string name="click_to_change">点击编辑</string>
+    <string name="notification_recovery_service">通知恢复服务</string>
+    <string name="enable_notifications_recording">启用通知记录</string>
+    <string name="notification_recording_description">启用后会记录通知；关闭后应用不会保存通知。</string>
+    <string name="add_widget">添加小组件</string>
+    <string name="last_noti_widget_description">显示最近收到的 20 条通知</string>
+    <string name="last_noti_title">最新通知</string>
+    <string name="chat_noti_widget_title">聊天通知</string>
+    <string name="chat_noti_widget_description">显示聊天通知</string>
+    <string name="deleted_noti_widget_title">已删除通知</string>
+    <string name="deleted_noti_widget_description">显示已删除通知</string>
+    <string name="privacy_policy">隐私政策</string>
+    <string name="delete_notification">删除通知</string>
+    <string name="confirm">确认</string>
+    <string name="confirm_delete_noti_warning">确定要删除此通知吗？此操作不可恢复。</string>
+    <string name="ask_not_permission_title">是否启用通知收集？</string>
+    <string name="explain_not_permission">需要授予应用通知访问权限才能记录通知。</string>
+    <string name="clear_all_data_title">清除所有数据</string>
+    <string name="clear_all_data_summary">将删除应用记录的所有数据。</string>
+    <string name="clear_all_data_confirm">确定要删除所有数据吗？应用将重新启动。</string>
+    <string name="export_import">导出/导入</string>
+    <string name="exports_the_notification_database_to_a_password_encrypted_file">将通知数据库导出为密码加密文件。</string>
+    <string name="export">导出</string>
+    <string name="import_string">导入</string>
+    <string name="import_notification_database_password_generated_during_export_required">导入通知数据库（需要导出时生成的密码）</string>
+    <string name="copy_string">复制</string>
+    <string name="zip_password">压缩包密码</string>
+    <string name="enter_zip_password">输入压缩包密码</string>
+    <string name="zip_does_not_exist">压缩包文件不存在</string>
+    <string name="select_the_zip">选择压缩包</string>
+    <string name="import_the_zip">导入压缩包</string>
+    <string name="import_completed">导入完成</string>
+    <string name="importing_zip">正在导入压缩包</string>
+    <string name="loading">正在加载…</string>
+    <string name="password_should_copy">该密码只会在此菜单显示一次，请复制保存。</string>
+    <string name="import_failed">导入失败</string>
+    <string name="filters_label">筛选条件</string>
+    <string name="app_label">应用</string>
+    <string name="apply_label">应用</string>
+    <string name="file_not_found">未找到文件</string>
+    <string name="file_selection_failed">文件选择失败，错误代码：%1$d</string>
+    <string name="zip_file_unavailable">无法读取压缩包文件</string>
+    <string name="operation_failed">操作失败</string>
+    <string name="block_screenshots">禁止截屏</string>
+    <string name="when_on_only_apps_in_the_blacklist_are_blocked_when_off_only_apps_in_the_whitelist_are_allowed">开启时，仅屏蔽黑名单中的应用；关闭时，仅允许白名单中的应用。</string>
+    <string name="blacklist_mode">黑名单模式</string>
+    <string name="whitelist_mode">白名单模式</string>
+    <string name="open_whitelist">打开白名单</string>
+    <string name="whitelist_info">已启用的白名单应用会被通知监听器记录</string>
+    <string name="reset_whitelist">重置白名单</string>
+    <string name="whitelist">白名单</string>
+    <string name="installed">仅已安装</string>
+    <string name="select_all">全选</string>
+    <string name="deselect_all">取消全选</string>
+    <string name="zip_file_password">ZIP 文件密码</string>
+    <string name="enter_password_encrypt_zip_or_leave_empty">输入密码以加密 ZIP 文件；留空将生成随机密码。</string>
+    <string name="password_invalid_alert">密码无效（至少 8 个字符且包含 1 个数字）</string>
+    <string name="create_zip">创建 ZIP</string>
+    <string name="icon_licenses">图标许可证</string>
+    <string name="all">全部</string>
+    <string name="are_you_sure_you_want_to_delete_the_selected_items_they_cannot_be_recovered">确定要删除选中的 %1$s 项吗？此操作不可恢复。</string>
+    <string name="app_list">应用列表</string>
+    <string name="autodetect">自动检测</string>
+    <string name="automatically_find_your_apps_so_you_can_manage_them_in_the_blacklist_and_whitelist">自动查找已安装应用，以便在黑名单和白名单中管理。</string>
+    <string name="do_you_want_to_automatically_find_your_apps_so_you_can_manage_them_in_the_blacklist_and_whitelist">是否自动查找已安装应用，以便在黑名单和白名单中管理？</string>
+</resources>

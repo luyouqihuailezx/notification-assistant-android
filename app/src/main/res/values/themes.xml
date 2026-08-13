@@ -1,0 +1,68 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.Simplenotlistener" parent="Theme.Material3.DayNight">
+
+        <item name="colorPrimary">@color/cyan_light</item>
+        <item name="colorPrimaryVariant">@color/cyan_dark</item>
+        <item name="colorOnPrimary">@color/cyan_white</item>
+
+        <item name="colorSecondary">@color/blue</item>
+        <item name="colorSecondaryVariant">@color/blue_white</item>
+        <item name="colorOnSecondary">@color/blue_dark</item>
+
+        <item name="cardBackgroundColor">@color/background_light_cardview</item>
+        <item name="android:textColor">@color/text_color_black</item>
+
+        <item name="backgroundColor">@color/background</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    </style>
+
+    <style name="Theme.light" parent="Theme.Material3.DayNight">
+
+        <item name="colorPrimary">@color/blue_dark</item>
+        <item name="colorPrimaryVariant">@color/cyan_dark</item>
+        <item name="colorOnPrimary">@color/cyan_white</item>
+
+        <item name="colorSecondary">@color/blue</item>
+        <item name="colorSecondaryVariant">@color/blue_white</item>
+        <item name="colorOnSecondary">@color/cyan_light</item>
+
+        <item name="cardBackgroundColor">@color/background_light_cardview</item>
+        <item name="android:textColor">@color/text_color_black</item>
+
+        <item name="backgroundColor">@color/background</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    </style>
+
+    <style name="Theme.dark" parent="Theme.Material3.DayNight">
+
+        <item name="colorPrimary">@color/blue_dark</item>
+        <item name="colorPrimaryVariant">@color/cyan_dark</item>
+        <item name="colorOnPrimary">@color/cyan_white</item>
+
+        <item name="colorSecondary">@color/blue</item>
+        <item name="colorSecondaryVariant">@color/blue_white</item>
+        <item name="colorOnSecondary">@color/cyan_light</item>
+
+        <item name="cardBackgroundColor">@color/background_dark_cardview</item>
+        <item name="android:textColor">@color/text_color_white</item>
+
+        <item name="backgroundColor">@color/background_dark</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    </style>
+
+    <style name="Theme.Simplenotlistener.AppWidgetContainerParent" parent="@android:style/Theme.DeviceDefault">
+        <!-- Radius of the outer bound of widgets to make the rounded corners -->
+        <item name="appWidgetRadius">16dp</item>
+        <!--
+        Radius of the inner view's bound of widgets to make the rounded corners.
+        It needs to be 8dp or less than the value of appWidgetRadius
+        -->
+        <item name="appWidgetInnerRadius">8dp</item>
+    </style>
+
+    <style name="Theme.Simplenotlistener.AppWidgetContainer" parent="Theme.Simplenotlistener.AppWidgetContainerParent">
+        <!-- Apply padding to avoid the content of the widget colliding with the rounded corners -->
+        <item name="appWidgetPadding">16dp</item>
+    </style>
+</resources>

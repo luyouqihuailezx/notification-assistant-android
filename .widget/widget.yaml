@@ -1,0 +1,19 @@
+version: 1
+title: Notification Listener Android
+
+actions:
+  - id: build-debug-apk
+    label: 一键编译 Debug APK
+    type: terminal
+    command: ./gradlew assembleDebug
+    cwd: .
+    group: 构建
+    confirm: 确认编译 Debug APK？
+
+  - id: build-install-adb
+    label: 编译并安装到 ADB 设备
+    type: terminal
+    command: ./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk
+    cwd: .
+    group: 构建
+    confirm: 确认编译并安装 APK 到已连接的 ADB 设备？

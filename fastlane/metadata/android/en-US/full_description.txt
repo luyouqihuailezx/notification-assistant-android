@@ -1,0 +1,10 @@
+Review your most important notifications with <i>Notifications Recovery.</i> Notifications are saved on your device and you can search to find a particular one. Furthermore, Notifications Recovery reports the notifications it thinks have been deleted from the device.
+
+- ✅ Save Notifications – Automatically stores notifications received on your Android device.
+- 🔍 Search Notifications – Easily find past notifications using keywords.
+- 📂 Organized History – View notifications grouped by apps for better readability.
+- 🕒 Detailed Log – See timestamps, app names, and notification content.
+- 📊 Graphs – See some notifications' stats from graph.
+- 🔔 See Deleted Notifications – See notifications that were accidentally or automatically deleted.
+- 🌓 Dark Mode – Enjoy a sleek UI with dark mode support.
+- 🔒 Secure Access – Enable password or fingerprint authentication to access the app.
