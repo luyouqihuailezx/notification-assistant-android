@@ -28,6 +28,13 @@
             app:title="@string/import_string" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/notification_agent">
+        <Preference
+            app:key="open_agent_settings"
+            app:summary="@string/agent_service_settings_summary"
+            app:title="@string/agent_service_settings" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/info">
         <Preference
             app:key="open_about"

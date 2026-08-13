@@ -72,6 +72,11 @@ class SettingsActivity : AppCompatActivity() {
                     startActivity(Intent(requireContext(), AboutActivity::class.java))
                     true
                 }
+            findPreference<Preference>("open_agent_settings")?.onPreferenceClickListener =
+                Preference.OnPreferenceClickListener {
+                    startActivity(Intent(requireContext(), AgentSettingsActivity::class.java))
+                    true
+                }
         }
 
         private fun bindServiceSwitch() {

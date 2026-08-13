@@ -76,6 +76,10 @@
             android:exported="false"
             android:label="@string/settings" />
         <activity
+            android:name=".activities.home.AgentSettingsActivity"
+            android:exported="false"
+            android:label="@string/agent_service_settings" />
+        <activity
             android:name=".activities.adaptersactivity.BlackWhiteListActivity"
             android:exported="false"
             android:label="@string/notification_collection_apps" />
