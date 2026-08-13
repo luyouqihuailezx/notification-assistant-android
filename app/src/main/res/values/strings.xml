@@ -41,6 +41,15 @@
     <string name="notification_agent">智能体</string>
     <string name="agent_service_settings">智能体服务</string>
     <string name="agent_service_settings_summary">配置服务地址、模型和 API Token。</string>
+    <string name="agent_new_session">新建</string>
+    <string name="agent_session_title">%1$s ▾</string>
+    <string name="agent_delete_session">删除当前会话</string>
+    <string name="agent_base_url">服务地址</string>
+    <string name="agent_model">模型名称</string>
+    <string name="agent_api_token">API Token</string>
+    <string name="agent_token_set">已设置</string>
+    <string name="agent_token_unset">未设置</string>
+    <string name="agent_settings_save_failed">保存智能体设置失败</string>
     <string name="reset_blacklist">重置黑名单</string>
     <string name="enable_notification">启用通知提醒</string>
     <string name="blacklist_info">已启用的黑名单应用将被通知监听器忽略</string>

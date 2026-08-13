@@ -10,8 +10,11 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,6 +24,7 @@ import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.SettingsActivity
+import com.android.alftendev.agent.AgentController
 import com.android.alftendev.agent.bindNotificationAgent
 import com.android.alftendev.adapters.NotificationsAdapter
 import com.android.alftendev.models.Notifications
@@ -55,6 +59,9 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private lateinit var notificationHistoryContent: LinearLayout
     private lateinit var settingsContainer: FrameLayout
     private lateinit var agentContainer: ComposeView
+    private lateinit var agentController: AgentController
+    private lateinit var agentActionBarView: View
+    private lateinit var agentSessionTitle: TextView
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private var isSettingsVisible = false
     private var isAgentVisible = false
@@ -86,7 +93,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         askAuth(this)
 
@@ -99,7 +105,16 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         notificationHistoryContent = findViewById(R.id.notificationHistoryContent)
         settingsContainer = findViewById(R.id.settingsContainer)
         agentContainer = findViewById(R.id.agentContainer)
-        agentContainer.bindNotificationAgent()
+        agentController = AgentController(this)
+        agentActionBarView = layoutInflater.inflate(R.layout.actionbar_agent, null)
+        agentSessionTitle = agentActionBarView.findViewById(R.id.agentSessionTitle)
+        agentSessionTitle.setOnClickListener { showAgentSessionMenu(it) }
+        agentActionBarView.findViewById<View>(R.id.agentNewSession).setOnClickListener {
+            agentController.createSession()
+        }
+        agentController.observe { refreshAgentActionBar() }
+        refreshAgentActionBar()
+        agentContainer.bindNotificationAgent(agentController)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
             MyApplication.executor.execute {
@@ -274,6 +289,8 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showSettings() {
         if (isSettingsVisible) return
 
+        hideAgentActionBar()
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.settings)
         notificationHistoryContent.visibility = View.GONE
         agentContainer.visibility = View.GONE
@@ -291,6 +308,8 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showNotificationHistory() {
         if (!isSettingsVisible && !isAgentVisible) return
 
+        hideAgentActionBar()
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.notification_history)
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.GONE
@@ -302,12 +321,62 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showAgent() {
         if (isAgentVisible) return
 
-        supportActionBar?.title = getString(R.string.notification_agent)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.VISIBLE
         isSettingsVisible = false
         isAgentVisible = true
+        showAgentActionBar()
+    }
+
+    private fun showAgentActionBar() {
+        supportActionBar?.apply {
+            setDisplayShowTitleEnabled(false)
+            setDisplayShowCustomEnabled(true)
+            setCustomView(
+                agentActionBarView,
+                ActionBar.LayoutParams(
+                    ActionBar.LayoutParams.MATCH_PARENT,
+                    ActionBar.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        refreshAgentActionBar()
+    }
+
+    private fun hideAgentActionBar() {
+        supportActionBar?.apply {
+            setDisplayShowCustomEnabled(false)
+            setDisplayShowTitleEnabled(true)
+        }
+    }
+
+    private fun refreshAgentActionBar() {
+        if (!::agentSessionTitle.isInitialized) return
+        agentSessionTitle.text = getString(R.string.agent_session_title, agentController.active.title)
+    }
+
+    private fun showAgentSessionMenu(anchor: View) {
+        PopupMenu(this, anchor).apply {
+            agentController.sessions.forEach { session ->
+                menu.add(session.title).setOnMenuItemClickListener {
+                    agentController.switchTo(session.id)
+                    true
+                }
+            }
+            menu.add(getString(R.string.agent_new_session)).setOnMenuItemClickListener {
+                agentController.createSession()
+                true
+            }
+            if (agentController.sessions.size > 1) {
+                menu.add(getString(R.string.agent_delete_session)).setOnMenuItemClickListener {
+                    agentController.deleteActive()
+                    true
+                }
+            }
+            show()
+        }
     }
 
 }
