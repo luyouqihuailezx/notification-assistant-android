@@ -1,0 +1,14 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="@string/about">
+        <Preference app:key="version" app:title="@string/version" />
+        <Preference app:key="rate_app" app:title="@string/rating" />
+        <Preference app:key="github" app:title="@string/github" />
+        <Preference app:key="privacy_policy" app:title="@string/privacy_policy" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/licenses">
+        <Preference app:key="app_license" app:title="@string/app_license" />
+        <Preference app:key="licenses" app:title="@string/open_source_licenses" />
+        <Preference app:key="icon_licenses" app:title="@string/icon_licenses" />
+        <Preference app:key="mp_chart_license" app:title="@string/MPAndroidChart_license" />
+    </PreferenceCategory>
+</PreferenceScreen>

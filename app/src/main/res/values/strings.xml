@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">通知历史</string>
+    <string name="app_name">通知助手</string>
     <string name="show_chat">显示为聊天</string>
     <string name="blacklist_auto">屏蔽系统应用</string>
     <string name="yes">是</string>
@@ -161,4 +161,21 @@
     <string name="autodetect">自动检测</string>
     <string name="automatically_find_your_apps_so_you_can_manage_them_in_the_blacklist_and_whitelist">自动查找已安装应用，以便在黑名单和白名单中管理。</string>
     <string name="do_you_want_to_automatically_find_your_apps_so_you_can_manage_them_in_the_blacklist_and_whitelist">是否自动查找已安装应用，以便在黑名单和白名单中管理？</string>
+    <string name="notification_assistant_service">通知助手服务</string>
+    <string name="notification_assistant_service_summary">开启后，仅收集已在应用列表中勾选的应用通知。</string>
+    <string name="permissions">权限设置</string>
+    <string name="notification_listener_access">通知使用权</string>
+    <string name="app_list_access">获取应用列表</string>
+    <string name="go_to_settings">前往设置</string>
+    <string name="notification_collection_apps">通知收集应用列表</string>
+    <string name="notification_collection_apps_summary">手动选择允许通知助手收集通知的应用。</string>
+    <string name="about">关于</string>
+    <string name="about_summary">版本、隐私政策、开源许可证等。</string>
+    <string name="search_apps">搜索应用</string>
+    <string name="selected">已选择</string>
+    <string name="not_selected">未选择</string>
+    <string name="permission_unavailable">当前系统无法提供此权限状态，请在系统应用详情中确认。</string>
+    <string name="open_settings_failed">无法打开系统设置</string>
+    <string name="error_details">错误详情</string>
+    <string name="copy_error">复制完整错误信息</string>
 </resources>

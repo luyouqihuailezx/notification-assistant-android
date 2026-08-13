@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
@@ -35,6 +36,36 @@ object PermissionUtils {
             }
 
             context.startActivity(intent)
+        }
+    }
+
+    fun openNotificationListenerSettings(context: Context) {
+        context.startActivity(
+            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    fun canReadInstalledApps(context: Context): Boolean {
+        return try {
+            context.packageManager.getInstalledApplications(PackageManager.GET_META_DATA).isNotEmpty()
+        } catch (e: SecurityException) {
+            CustomLog("permission-utils").log("Unable to read installed apps: ${e.stackTraceToString()}")
+            false
+        }
+    }
+
+    fun openAppDetailsSettings(context: Context) {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            CustomLog("permission-utils").log("Unable to open app details settings: ${e.stackTraceToString()}")
+            UiUtils.showToast(context.getString(R.string.open_settings_failed), context as AppCompatActivity)
         }
     }
 

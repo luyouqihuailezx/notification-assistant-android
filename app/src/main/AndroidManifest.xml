@@ -51,6 +51,10 @@
             android:exported="false"
             android:label="@string/licenses" />
         <activity
+            android:name=".activities.home.AboutActivity"
+            android:exported="false"
+            android:label="@string/about" />
+        <activity
             android:name=".activities.specificactivity.SpecificGraphActivity"
             android:exported="false"
             android:label="@string/info_specific_graph" />
@@ -69,7 +73,7 @@
         <activity
             android:name=".activities.adaptersactivity.BlackWhiteListActivity"
             android:exported="false"
-            android:label="@string/blacklist" />
+            android:label="@string/notification_collection_apps" />
         <activity
             android:name=".activities.home.SearchActivity"
             android:exported="false"

@@ -1,202 +1,43 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
-
-    <PreferenceCategory
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:title="@string/app_name">
-
-        <Preference
-            app:key="is_record_notification_permission_enabled"
-            app:title="@string/notification_recovery_service">
-
-        </Preference>
-
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="@string/app_name">
         <SwitchPreferenceCompat
-            app:defaultValue="true"
+            app:defaultValue="false"
             app:key="isRecordNotificationEnabled"
-            app:summary="@string/ask_not_permission_setting_summary"
-            app:title="@string/enable_notifications_recording" />
-
-        <Preference
-            app:key="delete_all_data"
-            app:summary="@string/clear_all_data_summary"
-            app:title="@string/clear_all_data_title">
-
-        </Preference>
-
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/app_list">
-        <Preference
-            app:key="autodetect_installed_apps"
-            app:summary="@string/automatically_find_your_apps_so_you_can_manage_them_in_the_blacklist_and_whitelist"
-            app:title="@string/autodetect">
-
-        </Preference>
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/blacklist">
-
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
-            app:key="@string/isAutoBlacklistOn"
-            app:title="@string/blacklist_auto" />
-
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:summary="@string/when_on_only_apps_in_the_blacklist_are_blocked_when_off_only_apps_in_the_whitelist_are_allowed"
-            app:key="isBlacklistEnabled"
-            app:title="@string/blacklist_mode" />
-
-        <Preference
-            app:key="open_blacklist"
-            app:summary="@string/blacklist_info"
-            app:title="@string/open_blacklist">
-
-        </Preference>
-
-        <Preference
-            app:key="reset_blacklist"
-            app:title="@string/reset_blacklist">
-
-        </Preference>
-
-        <Preference
-            app:key="reset_whitelist"
-            app:title="@string/reset_whitelist">
-
-        </Preference>
-
+            app:summary="@string/notification_assistant_service_summary"
+            app:title="@string/notification_assistant_service" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/chat">
-
+    <PreferenceCategory app:title="@string/permissions">
         <Preference
-            app:key="is_chat"
-            app:summary="@string/chat_summary"
-            app:title="@string/chat_title">
-
-        </Preference>
-
+            app:key="notification_listener_access"
+            app:title="@string/notification_listener_access" />
+        <Preference
+            app:key="app_list_access"
+            app:title="@string/app_list_access" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/notifications">
-
+    <PreferenceCategory app:title="@string/notification_collection_apps">
         <Preference
-            app:key="is_notification_permission_enabled"
-            app:title="@string/notification_permission">
-
-        </Preference>
-
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
-            app:key="@string/isNotificationEnabled"
-            app:summary="@string/notification_summary"
-            app:title="@string/enable_notification" />
-
+            app:key="open_collection_apps"
+            app:summary="@string/notification_collection_apps_summary"
+            app:title="@string/notification_collection_apps" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:title="@string/export_import">
-
+    <PreferenceCategory app:title="@string/export_import">
         <Preference
             app:key="export_db"
             app:summary="@string/exports_the_notification_database_to_a_password_encrypted_file"
-            app:title="@string/export">
-
-        </Preference>
-
+            app:title="@string/export" />
         <Preference
             app:key="import_db"
             app:summary="@string/import_notification_database_password_generated_during_export_required"
-            app:title="@string/import_string">
-
-        </Preference>
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/security">
-
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
-            app:key="isAuthEnabled"
-            app:title="@string/authInfo" />
-
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
-            app:key="areScreenshotBlocked"
-            app:title="@string/block_screenshots" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/theme">
-
-        <ListPreference
-            android:defaultValue="1"
-            android:entries="@array/theme_options"
-            android:entryValues="@array/theme_options"
-            android:key="isAutoTheme"
-            android:title="@string/change_theme" />
-
+            app:title="@string/import_string" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/info">
-
         <Preference
-            app:key="notification_count"
-            app:title="@string/notification_count">
-
-        </Preference>
-
-        <Preference
-            app:key="rate_app"
-            app:title="@string/rating">
-
-        </Preference>
-
-        <Preference
-            app:key="github"
-            app:title="@string/github">
-
-        </Preference>
-
-        <Preference
-            app:key="app_license"
-            app:title="@string/app_license">
-
-        </Preference>
-
-        <Preference
-            app:key="licenses"
-            app:title="@string/open_source_licenses">
-
-        </Preference>
-
-        <Preference
-            app:key="iconLicenses"
-            app:title="@string/icon_licenses">
-
-        </Preference>
-
-        <Preference
-            app:key="licenseMPAndroidChart"
-            app:title="@string/MPAndroidChart_license">
-
-        </Preference>
-
-        <Preference
-            app:key="privacyPolicy"
-            app:title="@string/privacy_policy">
-
-        </Preference>
-
-        <Preference
-            app:key="version"
-            app:title="@string/version">
-
-        </Preference>
-
+            app:key="open_about"
+            app:summary="@string/about_summary"
+            app:title="@string/about" />
     </PreferenceCategory>
-
 </PreferenceScreen>

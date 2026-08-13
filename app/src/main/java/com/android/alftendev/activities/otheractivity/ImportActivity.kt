@@ -2,6 +2,8 @@ package com.android.alftendev.activities.otheractivity
 
 import android.app.Dialog
 import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
@@ -16,6 +18,7 @@ import com.android.alftendev.utils.ImportExport.copyUriToFile
 import com.android.alftendev.utils.UiUtils
 import com.android.alftendev.utils.UiUtils.showLoadingDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class ImportActivity : AppCompatActivity() {
     companion object {
@@ -70,13 +73,13 @@ class ImportActivity : AppCompatActivity() {
                                 runOnUiThread {
                                     loadingDialog?.dismiss()
 
-                                    if (result) {
+                                    if (result.success) {
                                         UiUtils.showToast(
                                             getString(R.string.import_completed),
                                             this
                                         )
                                     } else {
-                                        UiUtils.showToast(getString(R.string.import_failed), this)
+                                        showImportError(result.errorDetails.orEmpty())
                                     }
                                 }
                             }
@@ -118,5 +121,19 @@ class ImportActivity : AppCompatActivity() {
                 )
             )
         }
+    }
+
+    private fun showImportError(details: String) {
+        LOGGER.log("Import failed: $details")
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.import_failed))
+            .setMessage(details.ifBlank { getString(R.string.operation_failed) })
+            .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton(R.string.copy_error) { _, _ ->
+                val clipboard = getSystemService(ClipboardManager::class.java)
+                clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.error_details), details))
+                UiUtils.showToast(getString(R.string.copy_string), this)
+            }
+            .show()
     }
 }

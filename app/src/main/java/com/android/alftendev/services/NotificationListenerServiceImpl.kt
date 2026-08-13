@@ -8,7 +8,6 @@ import android.service.notification.StatusBarNotification
 import androidx.collection.LruCache
 import com.android.alftendev.MyApplication
 import com.android.alftendev.services.utils.NotiUtils.isAutoBlacklistedNotification
-import com.android.alftendev.services.utils.NotiUtils.shouldDropByDefaultBlacklist
 import com.android.alftendev.services.utils.NotiUtils.shouldDropByPackage
 import com.android.alftendev.utils.CustomLog
 import com.android.alftendev.utils.DBUtils.createNotification
@@ -183,7 +182,6 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
         if (!MySharedPref.getIsRecordNotificationsEnabled()) return true
         if (isAutoBlacklistedNotification(sbn)) return true
         if (shouldDropByPackage(sbn.packageName)) return true
-        if (shouldDropByDefaultBlacklist(sbn)) return true
         return false
     }
 

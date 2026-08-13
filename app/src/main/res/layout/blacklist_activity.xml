@@ -27,21 +27,12 @@
             android:minHeight="52sp"
             android:textColorHint="@color/text_color_white" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/swShowOnlyInstalledApps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/installed"
-            android:textColor="@color/text_color_white" />
-
         <ImageButton
             android:id="@+id/bBlackWhitelistSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:contentDescription="@string/settings"
+            android:contentDescription="@string/select_all"
             android:padding="8dp"
             android:src="@drawable/baseline_settings_24"
             app:icon="@drawable/baseline_settings_24" />
@@ -57,5 +48,15 @@
             android:id="@+id/lvSettings"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:id="@+id/alphabetIndex"
+            android:layout_width="28dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="4dp"
+            android:background="?cardBackgroundColor"
+            android:gravity="center"
+            android:orientation="vertical" />
     </FrameLayout>
 </LinearLayout>

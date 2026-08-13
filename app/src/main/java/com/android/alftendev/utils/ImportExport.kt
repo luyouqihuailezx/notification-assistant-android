@@ -9,6 +9,7 @@ import com.android.alftendev.utils.DBUtils.allNotifications
 import com.android.alftendev.utils.DBUtils.allPackageNameLazy
 import com.android.alftendev.utils.DBUtils.createNotificationFromJson
 import com.android.alftendev.utils.DBUtils.createPackageNameFromJson
+import com.android.alftendev.utils.computables.PackageSettingsCache
 import io.objectbox.query.LazyList
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
@@ -26,6 +27,7 @@ import java.util.TimeZone
 
 object ImportExport {
     val LOGGER = CustomLog("noti-importer-export")
+    data class ImportResult(val success: Boolean, val errorDetails: String? = null)
 
     //TODO
     private fun generateSecurePassword(length: Int = 16): String {
@@ -81,7 +83,7 @@ object ImportExport {
         }
     }
 
-    fun importZipDecryptAndPrintStreaming(tmpZipFile: File, password: String): Boolean {
+    fun importZipDecryptAndPrintStreaming(tmpZipFile: File, password: String): ImportResult {
         var zipFile: ZipFile? = null
         var tempDir: File? = null
         var packageJsonFile: File? = null
@@ -99,7 +101,7 @@ object ImportExport {
                 ?.firstOrNull { it.name.startsWith("package") && it.extension == "json" }
                 ?: run {
                     LOGGER.log("File JSON packageJsonFile package not found")
-                    return false
+                    return ImportResult(false, "导入包中未找到应用列表 JSON 文件。")
                 }
 
             Scanner(packageJsonFile).use {
@@ -114,7 +116,7 @@ object ImportExport {
                 ?.firstOrNull { it.name.startsWith("notification") && it.extension == "json" }
                 ?: run {
                     LOGGER.log("File JSON notificationsJsonFile package not found")
-                    return false
+                    return ImportResult(false, "导入包中未找到通知 JSON 文件。")
                 }
 
             Scanner(notificationsJsonFile).use {
@@ -125,10 +127,11 @@ object ImportExport {
                 }
             }
 
-            return true
+            PackageSettingsCache.initCache()
+            return ImportResult(true)
         } catch (e: Exception) {
             LOGGER.log(e.stackTraceToString())
-            return false
+            return ImportResult(false, e.stackTraceToString())
         } finally {
             tmpZipFile.delete()
             zipFile?.file?.delete()
@@ -161,7 +164,7 @@ object ImportExport {
         createPackageNameFromJson(
             json.optString("pkg", ""),
             json.optString("name", ""),
-            json.optBoolean("isBlacklist", false),
+            json.optBoolean("isBlackList", json.optBoolean("isBlacklist", false)),
             json.optBoolean("isWhiteList", false),
             json.optBoolean("isChat", false),
         )

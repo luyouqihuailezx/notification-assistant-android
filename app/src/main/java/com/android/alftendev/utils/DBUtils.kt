@@ -356,18 +356,15 @@ object DBUtils {
         isWhiteList: Boolean,
         isChat: Boolean
     ) {
-        if (getPackageName(pkgName) == null) {
-            packageNames.put(
-                PackageName(
-                    0,
-                    name,
-                    pkgName,
-                    isBlacklist,
-                    isWhiteList,
-                    isChat
-                )
-            )
-        }
+        val existing = getPackageName(pkgName)
+        packageNames.put(
+            (existing ?: PackageName(pkg = pkgName)).apply {
+                this.name = name?.takeIf { it.isNotBlank() } ?: this.name
+                this.isBlackList = isBlacklist
+                this.isWhiteList = isWhiteList
+                this.isChat = isChat
+            }
+        )
     }
 
     fun createBlackListPackageName(

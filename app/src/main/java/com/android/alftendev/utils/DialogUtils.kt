@@ -125,8 +125,22 @@ object DialogUtils {
 
                 activity?.runOnUiThread {
                     loadingDialog?.dismiss()
-
-                    showExportedZipDialog(context, result.second, zip)
+                    if (result.first == "error") {
+                        MaterialAlertDialogBuilder(context)
+                            .setTitle(R.string.operation_failed)
+                            .setMessage(result.second)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setNeutralButton(R.string.copy_error) { _, _ ->
+                                val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(
+                                    ClipData.newPlainText(context.getString(R.string.error_details), result.second)
+                                )
+                                Toast.makeText(context, context.getString(R.string.copy_string), Toast.LENGTH_SHORT).show()
+                            }
+                            .show()
+                    } else {
+                        showExportedZipDialog(context, result.second, zip)
+                    }
                 }
             }
         }
