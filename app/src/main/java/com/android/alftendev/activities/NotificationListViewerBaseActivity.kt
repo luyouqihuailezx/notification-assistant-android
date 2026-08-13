@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -19,6 +20,7 @@ import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.SettingsActivity
+import com.android.alftendev.agent.bindNotificationAgent
 import com.android.alftendev.adapters.NotificationsAdapter
 import com.android.alftendev.models.Notifications
 import com.android.alftendev.utils.AuthUtils.askAuth
@@ -50,8 +52,10 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var notificationHistoryContent: LinearLayout
     private lateinit var settingsContainer: FrameLayout
+    private lateinit var agentContainer: ComposeView
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private var isSettingsVisible = false
+    private var isAgentVisible = false
 
     private lateinit var llSelectionBar: LinearLayout
     private lateinit var cbSelectAll: MaterialCheckBox
@@ -91,6 +95,8 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         bottomNavigation = findViewById(R.id.bottomNavigation)
         notificationHistoryContent = findViewById(R.id.notificationHistoryContent)
         settingsContainer = findViewById(R.id.settingsContainer)
+        agentContainer = findViewById(R.id.agentContainer)
+        agentContainer.bindNotificationAgent()
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
             MyApplication.executor.execute {
@@ -106,6 +112,10 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
                 }
                 R.id.nav_settings -> {
                     showSettings()
+                    true
+                }
+                R.id.nav_agent -> {
+                    showAgent()
                     true
                 }
                 else -> false
@@ -210,7 +220,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         onBackPressedDispatcher.addCallback(this) {
             if (::adapter.isInitialized && adapter.isSelectionMode) {
                 adapter.exitSelectionMode()
-            } else if (isSettingsVisible) {
+            } else if (isSettingsVisible || isAgentVisible) {
                 bottomNavigation.selectedItemId = R.id.nav_history
             } else {
                 finishAndRemoveTask()
@@ -261,8 +271,10 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (isSettingsVisible) return
 
         notificationHistoryContent.visibility = View.GONE
+        agentContainer.visibility = View.GONE
         settingsContainer.visibility = View.VISIBLE
         isSettingsVisible = true
+        isAgentVisible = false
 
         if (supportFragmentManager.findFragmentById(R.id.settingsContainer) == null) {
             supportFragmentManager.beginTransaction()
@@ -272,11 +284,23 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     }
 
     private fun showNotificationHistory() {
-        if (!isSettingsVisible) return
+        if (!isSettingsVisible && !isAgentVisible) return
 
         settingsContainer.visibility = View.GONE
+        agentContainer.visibility = View.GONE
         notificationHistoryContent.visibility = View.VISIBLE
         isSettingsVisible = false
+        isAgentVisible = false
+    }
+
+    private fun showAgent() {
+        if (isAgentVisible) return
+
+        notificationHistoryContent.visibility = View.GONE
+        settingsContainer.visibility = View.GONE
+        agentContainer.visibility = View.VISIBLE
+        isSettingsVisible = false
+        isAgentVisible = true
     }
 
 }

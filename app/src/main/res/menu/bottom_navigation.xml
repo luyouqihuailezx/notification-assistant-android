@@ -5,6 +5,10 @@
         android:icon="@drawable/baseline_notifications_24"
         android:title="@string/notification_history" />
     <item
+        android:id="@+id/nav_agent"
+        android:icon="@drawable/baseline_smart_toy_24"
+        android:title="@string/notification_agent" />
+    <item
         android:id="@+id/nav_settings"
         android:icon="@drawable/baseline_settings_24"
         android:title="@string/settings" />

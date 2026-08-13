@@ -38,6 +38,7 @@
     <string name="blacklist">黑名单</string>
     <string name="settings">设置</string>
     <string name="notification_history">通知历史</string>
+    <string name="notification_agent">智能体</string>
     <string name="reset_blacklist">重置黑名单</string>
     <string name="enable_notification">启用通知提醒</string>
     <string name="blacklist_info">已启用的黑名单应用将被通知监听器忽略</string>
