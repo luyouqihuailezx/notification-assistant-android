@@ -4,6 +4,21 @@
             app:key="notification_listener_access"
             app:title="@string/notification_listener_access" />
         <Preference
+            app:key="post_notifications"
+            app:title="@string/post_notifications_permission" />
+        <Preference
+            app:key="app_notification_settings"
+            app:title="@string/app_notification_settings" />
+        <Preference
+            app:key="exact_alarm_access"
+            app:title="@string/exact_alarm_access" />
+        <Preference
+            app:key="battery_optimization_access"
+            app:title="@string/battery_optimization_access" />
+        <Preference
+            app:key="boot_recovery"
+            app:title="@string/boot_recovery" />
+        <Preference
             app:key="app_list_access"
             app:title="@string/app_list_access" />
     </PreferenceCategory>

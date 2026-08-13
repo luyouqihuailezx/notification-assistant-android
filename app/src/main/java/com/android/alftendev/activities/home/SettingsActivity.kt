@@ -11,6 +11,7 @@ import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.adaptersactivity.BlackWhiteListActivity
 import com.android.alftendev.activities.otheractivity.ImportActivity
+import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.utils.AuthUtils.askAuth
 import com.android.alftendev.utils.DialogUtils.askPasswordForZipDialog
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
@@ -87,6 +88,7 @@ class SettingsActivity : AppCompatActivity() {
                     requireContext().getSharedPreferences(sharedPrefName, MODE_PRIVATE).edit {
                         putBoolean(RECORD_NOTIFICATIONS_ENABLED, value as Boolean)
                     }
+                    NotificationListenerKeepAlive.scheduleHealthCheckIfActive(requireContext())
                     true
                 }
             }

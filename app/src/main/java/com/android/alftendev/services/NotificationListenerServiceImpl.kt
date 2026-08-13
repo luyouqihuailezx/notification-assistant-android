@@ -41,6 +41,18 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
         private const val DUPLICATE_NOTIFICATION_TIME_WINDOW_MS = 30 * 1000L
     }
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        LOGGER.log("Notification listener connected.")
+        NotificationListenerKeepAlive.scheduleHealthCheckIfActive(this)
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        LOGGER.log("Notification listener disconnected; requesting rebind.")
+        NotificationListenerKeepAlive.requestRebindIfActive(this)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
 

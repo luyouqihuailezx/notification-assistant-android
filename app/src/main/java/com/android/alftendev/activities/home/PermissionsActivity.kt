@@ -40,6 +40,36 @@ class PermissionsActivity : AppCompatActivity() {
                     true
                 }
             }
+            findPreference<Preference>("post_notifications")?.apply {
+                summary = permissionSummary(PermissionUtils.isNotificationPostPermissionEnabled(requireContext()))
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    PermissionUtils.checkPostNotificationPermission(requireActivity())
+                    true
+                }
+            }
+            findPreference<Preference>("app_notification_settings")?.apply {
+                summary = getString(R.string.go_to_settings)
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    PermissionUtils.openAppNotificationSettings(requireContext())
+                    true
+                }
+            }
+            findPreference<Preference>("exact_alarm_access")?.apply {
+                summary = permissionSummary(PermissionUtils.isExactAlarmPermissionEnabled(requireContext()))
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    PermissionUtils.openExactAlarmSettings(requireContext())
+                    true
+                }
+            }
+            findPreference<Preference>("battery_optimization_access")?.apply {
+                summary = permissionSummary(PermissionUtils.isIgnoringBatteryOptimizations(requireContext()))
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    PermissionUtils.requestIgnoreBatteryOptimizations(requireContext())
+                    true
+                }
+            }
+            findPreference<Preference>("boot_recovery")?.summary =
+                getString(R.string.boot_recovery_summary)
             findPreference<Preference>("app_list_access")?.apply {
                 summary = permissionSummary(PermissionUtils.canReadInstalledApps(requireContext()))
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {

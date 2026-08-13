@@ -168,6 +168,12 @@
     <string name="notification_assistant_service_summary">开启后，仅收集已在应用列表中勾选的应用通知。</string>
     <string name="permissions">权限设置</string>
     <string name="notification_listener_access">通知使用权</string>
+    <string name="post_notifications_permission">应用通知</string>
+    <string name="app_notification_settings">应用通知设置</string>
+    <string name="exact_alarm_access">精确闹钟</string>
+    <string name="battery_optimization_access">忽略电池优化（可选）</string>
+    <string name="boot_recovery">开机恢复监听</string>
+    <string name="boot_recovery_summary">通知收集启用时，设备重启后会恢复监听健康检查。</string>
     <string name="app_list_access">获取应用列表</string>
     <string name="go_to_settings">前往设置</string>
     <string name="notification_collection_apps">通知收集应用列表</string>

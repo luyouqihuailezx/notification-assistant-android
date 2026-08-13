@@ -28,6 +28,7 @@ import com.android.alftendev.utils.DBUtils
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ALREADY_ASKED
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
+import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.utils.MySharedPref.getIsRecordNotificationsAlreadyAsked
 import com.android.alftendev.utils.MySharedPref.getIsRecordNotificationsEnabled
 import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
@@ -185,6 +186,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
                     ) { _, _ ->
                         sharedPref.edit()
                             .putBoolean(RECORD_NOTIFICATIONS_ENABLED, true).commit()
+                        NotificationListenerKeepAlive.scheduleHealthCheckIfActive(this)
                         askNotificationServicePermission(this)
                     }
                     builder.setNegativeButton(getString(R.string.no)) { _, _ -> }
