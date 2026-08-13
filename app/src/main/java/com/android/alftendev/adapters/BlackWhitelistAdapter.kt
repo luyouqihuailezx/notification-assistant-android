@@ -70,17 +70,8 @@ class BlackWhitelistAdapter(
         holder.selected.setOnCheckedChangeListener(null)
         holder.selected.isChecked = item.isWhiteList
         setSelectedBackground(holder, item.isWhiteList)
-        holder.selected.setOnCheckedChangeListener { button, checked ->
-            if (!button.isPressed) return@setOnCheckedChangeListener
-            item.isWhiteList = checked
-            setSelectedBackground(holder, checked)
-            MyApplication.executor.execute {
-                val entity = DBUtils.getPackageName(item.pkg) ?: item
-                entity.isWhiteList = checked
-                entity.isBlackList = false
-                MyApplication.packageNames.put(entity)
-                PackageSettingsCache.updatePackage(entity.pkg, false, checked)
-            }
+        holder.selected.setOnCheckedChangeListener { _, checked ->
+            updateSelection(holder, item, checked)
         }
 
         holder.icon.tag = item.pkg
@@ -91,7 +82,20 @@ class BlackWhitelistAdapter(
                 if (holder.icon.tag == item.pkg && icon != null) holder.icon.setImageDrawable(icon)
             }
         }
-        holder.itemView.setOnClickListener { holder.selected.performClick() }
+        holder.itemView.setOnClickListener { holder.selected.isChecked = !holder.selected.isChecked }
+        holder.icon.setOnClickListener { holder.selected.isChecked = !holder.selected.isChecked }
+    }
+
+    private fun updateSelection(holder: AppHolder, item: PackageName, selected: Boolean) {
+        item.isWhiteList = selected
+        setSelectedBackground(holder, selected)
+        MyApplication.executor.execute {
+            val entity = DBUtils.getPackageName(item.pkg) ?: item
+            entity.isWhiteList = selected
+            entity.isBlackList = false
+            MyApplication.packageNames.put(entity)
+            PackageSettingsCache.updatePackage(entity.pkg, false, selected)
+        }
     }
 
     private fun setSelectedBackground(holder: AppHolder, selected: Boolean) {
