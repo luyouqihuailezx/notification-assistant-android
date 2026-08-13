@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.android.alftendev.R
 import com.android.alftendev.models.Notifications
 import com.android.alftendev.models.getParsedNoti
-import com.android.alftendev.utils.DateUtils.dateFormatter
+import com.android.alftendev.utils.DateUtils.dateFormatterCompact
 import com.android.alftendev.utils.Utils
 import com.android.alftendev.utils.computables.AppIcon
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -62,7 +62,7 @@ class NotificationsAdapter(
 
         viewHolder.tvName.text = parsedNoti.title
         viewHolder.tvDescription.text = parsedNoti.text
-        viewHolder.tvDate.text = dateFormatter(notification.time)
+        viewHolder.tvDate.text = dateFormatterCompact(notification.time)
 
         viewHolder.ivIcon.setImageIcon(parsedNoti.icon)
 

@@ -13,6 +13,7 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.android.alftendev.MyApplication
 import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
@@ -49,6 +50,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var notificationHistoryContent: LinearLayout
     private lateinit var settingsContainer: FrameLayout
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private var isSettingsVisible = false
 
     private lateinit var llSelectionBar: LinearLayout
@@ -89,6 +91,13 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         bottomNavigation = findViewById(R.id.bottomNavigation)
         notificationHistoryContent = findViewById(R.id.notificationHistoryContent)
         settingsContainer = findViewById(R.id.settingsContainer)
+        swipeRefresh = findViewById(R.id.swipeRefresh)
+        swipeRefresh.setOnRefreshListener {
+            MyApplication.executor.execute {
+                refreshList(getNotifications())
+                runOnUiThread { swipeRefresh.isRefreshing = false }
+            }
+        }
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_history -> {
