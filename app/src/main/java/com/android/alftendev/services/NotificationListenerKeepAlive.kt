@@ -12,7 +12,7 @@ import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.PermissionUtils
 
 object NotificationListenerKeepAlive {
-    private const val HEALTH_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
+    private const val HEALTH_CHECK_INTERVAL_MS = 30 * 60 * 1000L
     private const val HEALTH_CHECK_REQUEST_CODE = 1001
     private val logger = CustomLog("not-listener-keep-alive")
 
