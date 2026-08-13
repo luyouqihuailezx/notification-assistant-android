@@ -4,7 +4,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,13 +24,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.Divider
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -252,32 +255,103 @@ private fun LoadingReply(onStop: () -> Unit) {
 
 @Composable
 private fun MarkdownText(markdown: String) {
-    markdown.split("```").forEachIndexed { index, block ->
-        if (index % 2 == 0) Text(markdownAnnotated(block))
-        else {
-            val code = block.substringAfter('\n', block)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        var inCodeBlock = false
+        val codeLines = mutableListOf<String>()
+
+        @Composable
+        fun flushCodeBlock() {
+            if (codeLines.isEmpty()) return
             Surface(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Text(
-                    code,
+                    codeLines.joinToString("\n"),
                     Modifier.padding(10.dp).horizontalScroll(rememberScrollState()),
                     fontFamily = FontFamily.Monospace
                 )
             }
+            codeLines.clear()
         }
+
+        markdown.lines().forEach { line ->
+            if (line.startsWith("```")) {
+                if (inCodeBlock) flushCodeBlock()
+                inCodeBlock = !inCodeBlock
+                return@forEach
+            }
+            if (inCodeBlock) {
+                codeLines += line
+                return@forEach
+            }
+
+            when {
+                line.matches(Regex("^\\s{0,3}([-*_])(?:\\s*\\1){2,}\\s*$")) -> {
+                    Divider(Modifier.padding(vertical = 8.dp))
+                }
+                line.startsWith("> ") -> Text(
+                    markdownAnnotated(line.removePrefix("> ")),
+                    Modifier.padding(start = 12.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                line.startsWith("### ") -> MarkdownHeading(line.removePrefix("### "), MaterialTheme.typography.titleMedium)
+                line.startsWith("## ") -> MarkdownHeading(line.removePrefix("## "), MaterialTheme.typography.titleLarge)
+                line.startsWith("# ") -> MarkdownHeading(line.removePrefix("# "), MaterialTheme.typography.headlineSmall)
+                line.startsWith("- ") || line.startsWith("* ") || line.startsWith("+ ") -> MarkdownListItem("•", line.drop(2))
+                line.matches(Regex("^\\d+[.)]\\s+.*$")) -> {
+                    val markerEnd = line.indexOfFirst { it == '.' || it == ')' } + 1
+                    MarkdownListItem(line.take(markerEnd), line.drop(markerEnd).trimStart())
+                }
+                else -> Text(markdownAnnotated(line), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        if (inCodeBlock) flushCodeBlock()
+    }
+}
+
+@Composable
+private fun MarkdownHeading(content: String, style: androidx.compose.ui.text.TextStyle) {
+    Text(markdownAnnotated(content), style = style, fontWeight = FontWeight.Bold)
+}
+
+@Composable
+private fun MarkdownListItem(marker: String, content: String) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(marker, Modifier.width(24.dp), fontWeight = FontWeight.Bold)
+        Text(markdownAnnotated(content), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 private fun markdownAnnotated(markdown: String): AnnotatedString = buildAnnotatedString {
-    val lines = markdown.lines()
-    lines.forEachIndexed { index, line ->
-        val normalized = line.removePrefix("# ").removePrefix("## ").removePrefix("- ").removePrefix("* ")
-        if (line.startsWith("#")) pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold))
-        append(normalized)
-        if (line.startsWith("#")) pop()
-        if (index < lines.lastIndex) append('\n')
+    var index = 0
+    while (index < markdown.length) {
+        val marker = listOf("**", "__", "~~", "`", "*", "_")
+            .firstOrNull { markdown.startsWith(it, index) }
+        if (marker == null) {
+            append(markdown[index++])
+            continue
+        }
+        val closingIndex = markdown.indexOf(marker, index + marker.length)
+        if (closingIndex == -1) {
+            append(markdown[index++])
+            continue
+        }
+        val content = markdown.substring(index + marker.length, closingIndex)
+        val style = when (marker) {
+            "**", "__" -> SpanStyle(fontWeight = FontWeight.Bold)
+            "~~" -> SpanStyle(textDecoration = TextDecoration.LineThrough)
+            "`" -> SpanStyle(
+                fontFamily = FontFamily.Monospace,
+                background = Color(0x22000000)
+            )
+            else -> SpanStyle(fontStyle = FontStyle.Italic)
+        }
+        pushStyle(style)
+        append(content)
+        pop()
+        index = closingIndex + marker.length
     }
 }
 
