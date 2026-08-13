@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
-import android.view.View
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -16,15 +15,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -58,7 +58,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -74,9 +73,9 @@ import com.android.alftendev.composes.utils.Typography
 import com.android.alftendev.utils.MySharedPref
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun ComposeView.bindNotificationAgent(controller: AgentController, bottomNavigation: View) {
+fun ComposeView.bindNotificationAgent(controller: AgentController) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-    setContent { AgentContentTheme { NotificationAgentScreen(controller, bottomNavigation) } }
+    setContent { AgentContentTheme { NotificationAgentScreen(controller) } }
 }
 
 @Composable
@@ -115,16 +114,8 @@ private fun AgentContentTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun NotificationAgentScreen(controller: AgentController, bottomNavigation: View) {
+private fun NotificationAgentScreen(controller: AgentController) {
     val context = LocalContext.current
-    var bottomNavigationHeightPx by remember { mutableIntStateOf(bottomNavigation.height) }
-    DisposableEffect(bottomNavigation) {
-        val listener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            bottomNavigationHeightPx = bottomNavigation.height
-        }
-        bottomNavigation.addOnLayoutChangeListener(listener)
-        onDispose { bottomNavigation.removeOnLayoutChangeListener(listener) }
-    }
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
@@ -209,8 +200,7 @@ private fun NotificationAgentScreen(controller: AgentController, bottomNavigatio
             Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .windowInsetsPadding(WindowInsets.ime)
-                .offset { IntOffset(0, bottomNavigationHeightPx) },
+                .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars)),
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(

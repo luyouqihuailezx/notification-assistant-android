@@ -119,7 +119,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         }
         agentController.observe { refreshAgentActionBar() }
         refreshAgentActionBar()
-        agentContainer.bindNotificationAgent(agentController, bottomNavigation)
+        agentContainer.bindNotificationAgent(agentController)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
             MyApplication.executor.execute {
@@ -329,6 +329,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (isAgentVisible) return
 
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        bottomNavigation.visibility = View.GONE
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.VISIBLE
