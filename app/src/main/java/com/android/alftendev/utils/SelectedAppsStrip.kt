@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.appcompat.widget.PopupMenu
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
 import com.android.alftendev.models.PackageName
@@ -27,7 +28,17 @@ object SelectedAppsStrip {
             val iconView = itemView.findViewById<ImageView>(R.id.ivSelectedAppIcon)
             iconView.tag = app.pkg
             iconView.setImageResource(R.drawable.baseline_android_24)
-            itemView.findViewById<View>(R.id.bRemoveSelectedApp).setOnClickListener { onRemove(app) }
+            itemView.setOnLongClickListener { anchor ->
+                PopupMenu(anchor.context, anchor).apply {
+                    menu.add(R.string.remove_added_app)
+                    setOnMenuItemClickListener {
+                        onRemove(app)
+                        true
+                    }
+                    show()
+                }
+                true
+            }
             container.addView(itemView)
             loadIcon(iconView, app.pkg)
         }

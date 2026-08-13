@@ -9,15 +9,4 @@
         android:layout_height="32dp"
         android:layout_gravity="center"
         android:contentDescription="@null" />
-
-    <ImageButton
-        android:id="@+id/bRemoveSelectedApp"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_gravity="start|top"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/remove_added_app"
-        android:padding="3dp"
-        android:src="@drawable/baseline_delete_outline_24"
-        android:tint="?android:textColorPrimary" />
 </FrameLayout>
