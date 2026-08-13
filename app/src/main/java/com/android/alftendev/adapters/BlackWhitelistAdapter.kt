@@ -2,6 +2,7 @@ package com.android.alftendev.adapters
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,7 +22,8 @@ import com.google.android.material.textview.MaterialTextView
 class BlackWhitelistAdapter(
     packages: List<PackageName>,
     private val sectionFor: (PackageName) -> String,
-    private val onSelectionChanged: () -> Unit = {}
+    private val onSelectionChanged: () -> Unit = {},
+    private val onSelectionWriteFailed: (Throwable) -> Unit = {}
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     sealed interface Row {
         data class Header(val letter: String) : Row
@@ -92,11 +94,24 @@ class BlackWhitelistAdapter(
         setSelectedBackground(holder, selected)
         onSelectionChanged()
         MyApplication.executor.execute {
-            val entity = DBUtils.getPackageName(item.pkg) ?: item
-            entity.isWhiteList = selected
-            entity.isBlackList = false
-            MyApplication.packageNames.put(entity)
-            PackageSettingsCache.updatePackage(entity.pkg, false, selected)
+            try {
+                val entity = DBUtils.getPackageName(item.pkg) ?: item
+                entity.isWhiteList = selected
+                entity.isBlackList = false
+                MyApplication.packageNames.put(entity)
+                PackageSettingsCache.updatePackage(entity.pkg, false, selected)
+            } catch (error: Throwable) {
+                Log.e("BlackWhitelistAdapter", "Unable to update app selection for ${item.pkg}", error)
+                Handler(Looper.getMainLooper()).post {
+                    item.isWhiteList = !selected
+                    holder.selected.setOnCheckedChangeListener(null)
+                    holder.selected.isChecked = !selected
+                    holder.selected.setOnCheckedChangeListener { _, checked -> updateSelection(holder, item, checked) }
+                    setSelectedBackground(holder, !selected)
+                    onSelectionChanged()
+                    onSelectionWriteFailed(error)
+                }
+            }
         }
     }
 

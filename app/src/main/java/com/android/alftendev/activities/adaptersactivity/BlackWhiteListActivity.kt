@@ -116,9 +116,12 @@ class BlackWhiteListActivity : AppCompatActivity() {
         val filtered = allApps.filter {
             query.isBlank() || normalize(displayName(it)).contains(query) || it.pkg.lowercase().contains(query)
         }
-        val adapter = BlackWhitelistAdapter(filtered, ::sectionFor) {
-            renderSelectedApps()
-        }
+        val adapter = BlackWhitelistAdapter(
+            packages = filtered,
+            sectionFor = ::sectionFor,
+            onSelectionChanged = ::renderSelectedApps,
+            onSelectionWriteFailed = ::showOperationError
+        )
         recyclerView.adapter = adapter
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int) =

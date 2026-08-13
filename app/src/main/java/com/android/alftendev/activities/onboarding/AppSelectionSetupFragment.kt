@@ -81,9 +81,12 @@ class AppSelectionSetupFragment : Fragment() {
         renderSelectedApps()
         val normalized = normalize(query)
         val filtered = apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }
-        val adapter = BlackWhitelistAdapter(filtered, ::section) {
-            renderSelectedApps()
-        }
+        val adapter = BlackWhitelistAdapter(
+            packages = filtered,
+            sectionFor = ::section,
+            onSelectionChanged = ::renderSelectedApps,
+            onSelectionWriteFailed = ::showOperationError
+        )
         list.adapter = adapter
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() { override fun getSpanSize(position: Int) = if (adapter.getItemViewType(position) == 0) columns else 1 }
         index.removeAllViews()
