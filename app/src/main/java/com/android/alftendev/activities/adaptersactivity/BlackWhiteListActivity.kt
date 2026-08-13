@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.MotionEvent
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -31,6 +32,8 @@ class BlackWhiteListActivity : AppCompatActivity() {
     private lateinit var alphabetIndex: LinearLayout
     private var allApps: List<PackageName> = emptyList()
     private var currentQuery = ""
+    private var indexEntries: List<Pair<String, Int>> = emptyList()
+    private var activeIndex = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, com.android.alftendev.utils.MySharedPref.getThemeOptions()))
@@ -42,6 +45,22 @@ class BlackWhiteListActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.lvSettings)
         alphabetIndex = findViewById(R.id.alphabetIndex)
+        alphabetIndex.setOnTouchListener { view, event ->
+            if (
+                indexEntries.isEmpty() ||
+                view.height <= 0 ||
+                (event.action != MotionEvent.ACTION_DOWN && event.action != MotionEvent.ACTION_MOVE)
+            ) {
+                return@setOnTouchListener true
+            }
+            val index = ((event.y / view.height) * indexEntries.size).toInt()
+                .coerceIn(0, indexEntries.lastIndex)
+            if (index != activeIndex) {
+                activeIndex = index
+                layoutManager.scrollToPositionWithOffset(indexEntries[index].second, 0)
+            }
+            true
+        }
         layoutManager = GridLayoutManager(this, 3)
         recyclerView.layoutManager = layoutManager
         findViewById<EditText>(R.id.etSearchSettings).apply {
@@ -89,13 +108,18 @@ class BlackWhiteListActivity : AppCompatActivity() {
 
     private fun buildAlphabetIndex(sectionPositions: Map<String, Int>) {
         alphabetIndex.removeAllViews()
-        sectionPositions.forEach { (letter, position) ->
+        indexEntries = sectionPositions.toList()
+        activeIndex = -1
+        indexEntries.forEach { (letter, _) ->
             TextView(this).apply {
                 text = letter
                 gravity = Gravity.CENTER
                 textSize = 11f
-                setPadding(0, 2, 0, 2)
-                setOnClickListener { layoutManager.scrollToPositionWithOffset(position, 0) }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f
+                )
                 alphabetIndex.addView(this)
             }
         }

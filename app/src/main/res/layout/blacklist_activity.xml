@@ -53,10 +53,10 @@
         <LinearLayout
             android:id="@+id/alphabetIndex"
             android:layout_width="28dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="end|center_vertical"
             android:layout_marginEnd="4dp"
-            android:background="?cardBackgroundColor"
+            android:background="@android:color/transparent"
             android:gravity="center"
             android:orientation="vertical" />
     </FrameLayout>
