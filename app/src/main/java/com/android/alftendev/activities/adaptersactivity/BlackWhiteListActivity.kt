@@ -6,10 +6,12 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.android.alftendev.utils.SelectedAppsStrip
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.GridLayoutManager
@@ -31,6 +33,8 @@ class BlackWhiteListActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var layoutManager: GridLayoutManager
     private lateinit var alphabetIndex: LinearLayout
+    private lateinit var selectedAppsSection: View
+    private lateinit var selectedAppsContainer: LinearLayout
     private var allApps: List<PackageName> = emptyList()
     private var currentQuery = ""
     private var indexEntries: List<Pair<String, Int>> = emptyList()
@@ -47,6 +51,8 @@ class BlackWhiteListActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.lvSettings)
         alphabetIndex = findViewById(R.id.alphabetIndex)
+        selectedAppsSection = findViewById(R.id.selectedAppsSection)
+        selectedAppsContainer = findViewById(R.id.selectedAppsContainer)
         alphabetIndex.setOnTouchListener { view, event ->
             if (
                 indexEntries.isEmpty() ||
@@ -66,7 +72,7 @@ class BlackWhiteListActivity : AppCompatActivity() {
         layoutManager = GridLayoutManager(this, columnCount)
         recyclerView.layoutManager = layoutManager
         recyclerView.doOnLayout { view ->
-            val minimumCardWidth = (132 * resources.displayMetrics.density).toInt()
+            val minimumCardWidth = (88 * resources.displayMetrics.density).toInt()
             val availableWidth = view.width - view.paddingStart - view.paddingEnd
             val newColumnCount = (availableWidth / minimumCardWidth).coerceAtLeast(1)
             if (newColumnCount != columnCount) {
@@ -105,17 +111,45 @@ class BlackWhiteListActivity : AppCompatActivity() {
     }
 
     private fun renderList() {
+        renderSelectedApps()
         val query = normalize(currentQuery)
         val filtered = allApps.filter {
             query.isBlank() || normalize(displayName(it)).contains(query) || it.pkg.lowercase().contains(query)
         }
-        val adapter = BlackWhitelistAdapter(filtered, ::sectionFor)
+        val adapter = BlackWhitelistAdapter(filtered, ::sectionFor) {
+            renderSelectedApps()
+        }
         recyclerView.adapter = adapter
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int) =
                 if (adapter.getItemViewType(position) == 0) columnCount else 1
         }
         buildAlphabetIndex(adapter.sectionPositions)
+    }
+
+    private fun renderSelectedApps() {
+        SelectedAppsStrip.render(selectedAppsSection, selectedAppsContainer, allApps.filter { it.isWhiteList }, ::removeSelectedApp)
+    }
+
+    private fun removeSelectedApp(app: PackageName) {
+        SelectedAppsStrip.remove(
+            app = app,
+            onRemoved = ::renderList,
+            onFailure = { error -> showOperationError(error) }
+        )
+    }
+
+    private fun showOperationError(error: Throwable) {
+        val details = error.stackTraceToString()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.operation_failed)
+            .setMessage(details)
+            .setNeutralButton(R.string.copy_error) { _, _ ->
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.error_details), details))
+            }
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun buildAlphabetIndex(sectionPositions: Map<String, Int>) {

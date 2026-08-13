@@ -22,13 +22,17 @@ import com.android.alftendev.R
 import com.android.alftendev.adapters.BlackWhitelistAdapter
 import com.android.alftendev.models.PackageName
 import com.android.alftendev.utils.DBUtils
+import com.android.alftendev.utils.SelectedAppsStrip
 import com.android.alftendev.utils.computables.AppListCache
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class AppSelectionSetupFragment : Fragment() {
     private val transliterator = Transliterator.getInstance("Han-Latin; Latin-ASCII")
     private lateinit var list: RecyclerView
     private lateinit var layoutManager: GridLayoutManager
     private lateinit var index: LinearLayout
+    private lateinit var selectedAppsSection: View
+    private lateinit var selectedAppsContainer: LinearLayout
     private var apps: List<PackageName> = emptyList()
     private var query = ""
     private var columns = 1
@@ -38,10 +42,12 @@ class AppSelectionSetupFragment : Fragment() {
         val view = inflater.inflate(R.layout.blacklist_activity, container, false)
         list = view.findViewById(R.id.lvSettings)
         index = view.findViewById(R.id.alphabetIndex)
+        selectedAppsSection = view.findViewById(R.id.selectedAppsSection)
+        selectedAppsContainer = view.findViewById(R.id.selectedAppsContainer)
         layoutManager = GridLayoutManager(requireContext(), columns)
         list.layoutManager = layoutManager
         list.doOnLayout { recycler ->
-            val minimum = (132 * resources.displayMetrics.density).toInt()
+            val minimum = (88 * resources.displayMetrics.density).toInt()
             val next = ((recycler.width - recycler.paddingStart - recycler.paddingEnd) / minimum).coerceAtLeast(1)
             if (next != columns) { columns = next; layoutManager.spanCount = next; list.adapter?.notifyDataSetChanged() }
         }
@@ -72,14 +78,43 @@ class AppSelectionSetupFragment : Fragment() {
     }
 
     private fun render() {
+        renderSelectedApps()
         val normalized = normalize(query)
         val filtered = apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }
-        val adapter = BlackWhitelistAdapter(filtered, ::section)
+        val adapter = BlackWhitelistAdapter(filtered, ::section) {
+            renderSelectedApps()
+        }
         list.adapter = adapter
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() { override fun getSpanSize(position: Int) = if (adapter.getItemViewType(position) == 0) columns else 1 }
         index.removeAllViews()
         indexEntries = adapter.sectionPositions.toList()
         indexEntries.forEach { (letter, _) -> index.addView(TextView(requireContext()).apply { text = letter; gravity = Gravity.CENTER; textSize = 11f }, LinearLayout.LayoutParams(-1, 0, 1f)) }
+    }
+
+    private fun renderSelectedApps() {
+        SelectedAppsStrip.render(selectedAppsSection, selectedAppsContainer, apps.filter { it.isWhiteList }, ::removeSelectedApp)
+    }
+
+    private fun removeSelectedApp(app: PackageName) {
+        SelectedAppsStrip.remove(
+            app = app,
+            onRemoved = ::render,
+            onFailure = { error -> showOperationError(error) }
+        )
+    }
+
+    private fun showOperationError(error: Throwable) {
+        val details = error.stackTraceToString()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.operation_failed)
+            .setMessage(details)
+            .setNeutralButton(R.string.copy_error) { _, _ ->
+                val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                    as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.error_details), details))
+            }
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun name(item: PackageName) = item.name?.takeIf { it.isNotBlank() } ?: item.pkg

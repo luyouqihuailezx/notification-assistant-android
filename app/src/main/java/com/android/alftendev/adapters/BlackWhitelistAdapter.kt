@@ -20,7 +20,8 @@ import com.google.android.material.textview.MaterialTextView
 
 class BlackWhitelistAdapter(
     packages: List<PackageName>,
-    private val sectionFor: (PackageName) -> String
+    private val sectionFor: (PackageName) -> String,
+    private val onSelectionChanged: () -> Unit = {}
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     sealed interface Row {
         data class Header(val letter: String) : Row
@@ -89,6 +90,7 @@ class BlackWhitelistAdapter(
     private fun updateSelection(holder: AppHolder, item: PackageName, selected: Boolean) {
         item.isWhiteList = selected
         setSelectedBackground(holder, selected)
+        onSelectionChanged()
         MyApplication.executor.execute {
             val entity = DBUtils.getPackageName(item.pkg) ?: item
             entity.isWhiteList = selected

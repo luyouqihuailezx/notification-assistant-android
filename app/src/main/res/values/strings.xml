@@ -201,6 +201,8 @@
     <string name="go_to_settings">前往设置</string>
     <string name="notification_collection_apps">通知收集应用列表</string>
     <string name="notification_collection_apps_summary">手动选择允许通知助手收集通知的应用。</string>
+    <string name="added_apps">已添加应用</string>
+    <string name="remove_added_app">移除已添加应用</string>
     <string name="about">关于</string>
     <string name="about_summary">版本、隐私政策、开源许可证等。</string>
     <string name="search_apps">搜索应用</string>
