@@ -47,13 +47,6 @@ class PermissionsActivity : AppCompatActivity() {
                     true
                 }
             }
-            findPreference<Preference>("app_notification_settings")?.apply {
-                summary = getString(R.string.go_to_settings)
-                onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    PermissionUtils.openAppNotificationSettings(requireContext())
-                    true
-                }
-            }
             findPreference<Preference>("exact_alarm_access")?.apply {
                 summary = permissionSummary(PermissionUtils.isExactAlarmPermissionEnabled(requireContext()))
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
@@ -68,8 +61,6 @@ class PermissionsActivity : AppCompatActivity() {
                     true
                 }
             }
-            findPreference<Preference>("boot_recovery")?.summary =
-                getString(R.string.boot_recovery_summary)
             findPreference<Preference>("app_list_access")?.apply {
                 summary = permissionSummary(PermissionUtils.canReadInstalledApps(requireContext()))
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
