@@ -1,8 +1,13 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory app:title="@string/permissions">
+    <PreferenceCategory app:title="@string/required_permissions">
         <Preference
             app:key="notification_listener_access"
             app:title="@string/notification_listener_access" />
+        <Preference
+            app:key="app_list_access"
+            app:title="@string/app_list_access" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/recommended_permissions">
         <Preference
             app:key="post_notifications"
             app:title="@string/post_notifications_permission" />
@@ -12,8 +17,5 @@
         <Preference
             app:key="battery_optimization_access"
             app:title="@string/battery_optimization_access" />
-        <Preference
-            app:key="app_list_access"
-            app:title="@string/app_list_access" />
     </PreferenceCategory>
 </PreferenceScreen>
