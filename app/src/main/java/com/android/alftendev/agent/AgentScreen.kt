@@ -111,7 +111,7 @@ private fun AgentContentTheme(content: @Composable () -> Unit) {
 @Composable
 private fun NotificationAgentScreen(controller: AgentController) {
     val context = LocalContext.current
-    val service = remember { NotificationAgentService(AgentSettings(context)) }
+    val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }

@@ -11,6 +11,8 @@ import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.executor
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.AllNotificationsActivity
+import com.android.alftendev.activities.onboarding.OnboardingActivity
+import com.android.alftendev.activities.onboarding.OnboardingSettings
 import com.android.alftendev.utils.AuthUtils.haveToAskAuth
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
@@ -28,7 +30,12 @@ class MainActivity : AppCompatActivity() {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
 
-        askNotificationServicePermission(this)
+        if (!OnboardingSettings(this).completed) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+            finish()
+            return
+        }
+
 
         runOnUiThread {
             setContentView(R.layout.activity_main)

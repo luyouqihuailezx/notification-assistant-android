@@ -30,6 +30,10 @@
 
     <PreferenceCategory app:title="@string/notification_agent">
         <Preference
+            app:key="open_onboarding"
+            app:summary="@string/onboarding"
+            app:title="@string/onboarding" />
+        <Preference
             app:key="open_agent_settings"
             app:summary="@string/agent_service_settings_summary"
             app:title="@string/agent_service_settings" />

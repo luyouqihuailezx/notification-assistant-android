@@ -9,7 +9,11 @@ import java.net.URL
 import java.time.Instant
 import java.util.regex.Pattern
 
-class NotificationAgentService(private val settings: AgentSettings) {
+class NotificationAgentService(private val settings: AgentProviderSettings) {
+    sealed interface VerificationResult {
+        data class Success(val modelCount: Int) : VerificationResult
+        data class Failure(val error: Exception) : VerificationResult
+    }
     data class Answer(val content: String, val reasoning: String?)
 
     fun answer(messages: List<AgentMessage>): Answer {
@@ -61,7 +65,7 @@ class NotificationAgentService(private val settings: AgentSettings) {
             .put("messages", messages)
             .put("tool_choice", "auto")
             .put("tools", JSONArray().put(SEARCH_TOOL_SCHEMA))
-        val connection = (URL("${configuration.baseUrl}/v1/chat/completions").openConnection() as HttpURLConnection)
+        val connection = (URL("${configuration.baseUrl}/chat/completions").openConnection() as HttpURLConnection)
         return try {
             connection.requestMethod = "POST"
             connection.connectTimeout = 20_000
@@ -80,6 +84,37 @@ class NotificationAgentService(private val settings: AgentSettings) {
         } finally {
             connection.disconnect()
         }
+    }
+
+    fun verify(): VerificationResult {
+        val configuration = settings.configuration()
+        return try {
+            val models = request(configuration, "GET", "models", null)
+            val data = models.optJSONArray("data") ?: error("模型列表响应缺少 data 字段")
+            request(configuration, "POST", "chat/completions", JSONObject()
+                .put("model", configuration.model)
+                .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", "hello"))))
+            VerificationResult.Success(data.length())
+        } catch (error: Exception) {
+            VerificationResult.Failure(error)
+        }
+    }
+
+    private fun request(configuration: AgentConfiguration, method: String, path: String, payload: JSONObject?): JSONObject {
+        val connection = (URL(endpoint(configuration.baseUrl, path)).openConnection() as HttpURLConnection)
+        return try {
+            connection.requestMethod = method
+            connection.connectTimeout = 20_000
+            connection.readTimeout = 90_000
+            connection.doOutput = payload != null
+            connection.setRequestProperty("Content-Type", "application/json")
+            if (configuration.token.isNotBlank()) connection.setRequestProperty("Authorization", "Bearer ${configuration.token}")
+            payload?.let { connection.outputStream.bufferedWriter().use { writer -> writer.write(it.toString()) } }
+            val status = connection.responseCode
+            val body = (if (status in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (status !in 200..299) error("智能体服务请求失败（HTTP $status）：$body")
+            JSONObject(body)
+        } finally { connection.disconnect() }
     }
 
     private fun searchNotifications(arguments: JSONObject): JSONArray {
@@ -124,6 +159,7 @@ class NotificationAgentService(private val settings: AgentSettings) {
     }
 
     companion object {
+        fun endpoint(baseUrl: String, path: String): String = "${baseUrl.trim().trimEnd('/')}/${path.trimStart('/')}"
         private const val SEARCH_TOOL = "search_notifications"
         private const val SYSTEM_PROMPT = """你是通知历史智能体。仅可通过 search_notifications 查找本机通知；不得声称看到未查询到的数据。不要使用语义搜索。工具可以反复调用，直到获得可靠答案。回答使用简洁 Markdown。"""
         private val SEARCH_TOOL_SCHEMA = JSONObject("""{

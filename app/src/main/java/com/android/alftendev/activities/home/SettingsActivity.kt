@@ -10,6 +10,7 @@ import androidx.preference.SwitchPreferenceCompat
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.adaptersactivity.BlackWhiteListActivity
+import com.android.alftendev.activities.onboarding.OnboardingActivity
 import com.android.alftendev.activities.otheractivity.ImportActivity
 import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.utils.AuthUtils.askAuth
@@ -73,6 +74,10 @@ class SettingsActivity : AppCompatActivity() {
                     startActivity(Intent(requireContext(), AboutActivity::class.java))
                     true
                 }
+            findPreference<Preference>("open_onboarding")?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                startActivity(Intent(requireContext(), OnboardingActivity::class.java))
+                true
+            }
             findPreference<Preference>("open_agent_settings")?.onPreferenceClickListener =
                 Preference.OnPreferenceClickListener {
                     startActivity(Intent(requireContext(), AgentSettingsActivity::class.java))
