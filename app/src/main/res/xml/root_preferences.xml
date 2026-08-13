@@ -6,6 +6,10 @@
             app:summary="@string/notification_assistant_service_summary"
             app:title="@string/notification_assistant_service" />
         <Preference
+            app:key="open_onboarding"
+            app:summary="@string/onboarding"
+            app:title="@string/onboarding" />
+        <Preference
             app:key="open_permissions"
             app:title="@string/permissions" />
     </PreferenceCategory>
@@ -29,10 +33,6 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/notification_agent">
-        <Preference
-            app:key="open_onboarding"
-            app:summary="@string/onboarding"
-            app:title="@string/onboarding" />
         <Preference
             app:key="open_agent_settings"
             app:summary="@string/agent_service_settings_summary"
