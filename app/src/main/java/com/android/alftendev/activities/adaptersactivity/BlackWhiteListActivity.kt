@@ -11,6 +11,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.alftendev.MyApplication
@@ -34,6 +35,7 @@ class BlackWhiteListActivity : AppCompatActivity() {
     private var currentQuery = ""
     private var indexEntries: List<Pair<String, Int>> = emptyList()
     private var activeIndex = -1
+    private var columnCount = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, com.android.alftendev.utils.MySharedPref.getThemeOptions()))
@@ -61,8 +63,18 @@ class BlackWhiteListActivity : AppCompatActivity() {
             }
             true
         }
-        layoutManager = GridLayoutManager(this, 3)
+        layoutManager = GridLayoutManager(this, columnCount)
         recyclerView.layoutManager = layoutManager
+        recyclerView.doOnLayout { view ->
+            val minimumCardWidth = (132 * resources.displayMetrics.density).toInt()
+            val availableWidth = view.width - view.paddingStart - view.paddingEnd
+            val newColumnCount = (availableWidth / minimumCardWidth).coerceAtLeast(1)
+            if (newColumnCount != columnCount) {
+                columnCount = newColumnCount
+                layoutManager.spanCount = columnCount
+                recyclerView.adapter?.notifyDataSetChanged()
+            }
+        }
         findViewById<EditText>(R.id.etSearchSettings).apply {
             hint = getString(R.string.search_apps)
             addTextChangedListener(object : TextWatcher {
@@ -101,7 +113,7 @@ class BlackWhiteListActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int) =
-                if (adapter.getItemViewType(position) == 0) 3 else 1
+                if (adapter.getItemViewType(position) == 0) columnCount else 1
         }
         buildAlphabetIndex(adapter.sectionPositions)
     }

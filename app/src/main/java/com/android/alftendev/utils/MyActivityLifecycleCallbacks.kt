@@ -2,6 +2,7 @@ package com.android.alftendev.utils
 
 import android.app.Activity
 import android.app.Application
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -36,6 +37,15 @@ class MyActivityLifecycleCallbacks : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        val configuration = activity.resources.configuration
+        val shortestSideDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp).coerceAtLeast(1)
+        val longestSideDp = maxOf(configuration.screenWidthDp, configuration.screenHeightDp)
+        val isPhone = shortestSideDp <= 500 && longestSideDp.toFloat() / shortestSideDp >= 16f / 9f
+        activity.requestedOrientation = if (isPhone) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
     }
 
     override fun onActivityDestroyed(activity: Activity) {
