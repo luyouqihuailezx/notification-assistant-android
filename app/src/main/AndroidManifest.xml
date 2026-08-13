@@ -81,7 +81,8 @@
         <activity
             android:name=".activities.home.AgentSettingsActivity"
             android:exported="false"
-            android:label="@string/agent_service_settings" />
+            android:label="@string/agent_service_settings"
+            android:screenOrientation="behind" />
         <activity
             android:name=".activities.adaptersactivity.BlackWhiteListActivity"
             android:exported="false"
