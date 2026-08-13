@@ -56,6 +56,7 @@
     <string name="agent_verify">验证智能体服务</string>
     <string name="onboarding">启动配置向导</string>
     <string name="onboarding_step_agent">1. 智能体服务</string>
+    <string name="onboarding_step_counter">第 %1$d / %2$d 步</string>
     <string name="onboarding_step_permissions">2. 系统权限</string>
     <string name="onboarding_step_apps">3. 通知收集应用</string>
     <string name="next_step">下一步</string>
