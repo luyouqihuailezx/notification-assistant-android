@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.FrameLayout
@@ -85,6 +86,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         askAuth(this)
 
@@ -272,6 +274,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showSettings() {
         if (isSettingsVisible) return
 
+        supportActionBar?.title = getString(R.string.settings)
         notificationHistoryContent.visibility = View.GONE
         agentContainer.visibility = View.GONE
         settingsContainer.visibility = View.VISIBLE
@@ -288,6 +291,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showNotificationHistory() {
         if (!isSettingsVisible && !isAgentVisible) return
 
+        supportActionBar?.title = getString(R.string.notification_history)
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.GONE
         notificationHistoryContent.visibility = View.VISIBLE
@@ -298,6 +302,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showAgent() {
         if (isAgentVisible) return
 
+        supportActionBar?.title = getString(R.string.notification_agent)
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.VISIBLE
