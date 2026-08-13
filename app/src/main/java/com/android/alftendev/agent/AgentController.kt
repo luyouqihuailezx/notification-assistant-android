@@ -31,17 +31,10 @@ class AgentController(context: Context) {
         notifyChanged()
     }
 
-    fun deleteSession(id: String) {
-        val remaining = sessions.filterNot { it.id == id }
-        if (remaining.isEmpty()) {
-            val session = AgentSession()
-            activeId = session.id
-            persist(listOf(session))
-            return
-        }
-        if (activeId == id) {
-            activeId = remaining.first().id
-        }
+    fun deleteActive() {
+        if (sessions.size <= 1) return
+        val remaining = sessions.filterNot { it.id == activeId }
+        activeId = remaining.first().id
         persist(remaining)
     }
 

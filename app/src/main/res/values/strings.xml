@@ -42,8 +42,8 @@
     <string name="agent_service_settings">智能体服务</string>
     <string name="agent_service_settings_summary">配置服务地址、模型和 API Token。</string>
     <string name="agent_new_session">新建</string>
-    <string name="agent_delete_session">删除此会话</string>
-    <string name="agent_delete_session_confirm">确定删除会话“%1$s”吗？此操作不可恢复。</string>
+    <string name="agent_session_title">%1$s ▾</string>
+    <string name="agent_delete_session">删除当前会话</string>
     <string name="agent_base_url">服务地址</string>
     <string name="agent_model">模型名称</string>
     <string name="agent_api_token">API Token</string>
