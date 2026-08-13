@@ -4,17 +4,20 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.graphics.drawable.ColorDrawable
+import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.PopupMenu
 import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +28,7 @@ import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.SettingsActivity
 import com.android.alftendev.agent.AgentController
+import com.android.alftendev.agent.AgentSessionMenuAdapter
 import com.android.alftendev.agent.bindNotificationAgent
 import com.android.alftendev.adapters.NotificationsAdapter
 import com.android.alftendev.models.Notifications
@@ -62,6 +66,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private lateinit var agentController: AgentController
     private lateinit var agentActionBarView: View
     private lateinit var agentSessionTitle: TextView
+    private var agentSessionPopup: PopupWindow? = null
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private var isSettingsVisible = false
     private var isAgentVisible = false
@@ -346,6 +351,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     }
 
     private fun hideAgentActionBar() {
+        agentSessionPopup?.dismiss()
         supportActionBar?.apply {
             setDisplayShowCustomEnabled(false)
             setDisplayShowTitleEnabled(true)
@@ -358,25 +364,44 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     }
 
     private fun showAgentSessionMenu(anchor: View) {
-        PopupMenu(this, anchor).apply {
-            agentController.sessions.forEach { session ->
-                menu.add(session.title).setOnMenuItemClickListener {
-                    agentController.switchTo(session.id)
-                    true
-                }
+        agentSessionPopup?.dismiss()
+        val sessions = agentController.sessions
+        val listView = ListView(this).apply {
+            adapter = AgentSessionMenuAdapter(this@NotificationListViewerBaseActivity, sessions, agentController.activeId)
+            divider = null
+            setOnItemClickListener { _, _, position, _ ->
+                agentController.switchTo(sessions[position].id)
+                agentSessionPopup?.dismiss()
             }
-            menu.add(getString(R.string.agent_new_session)).setOnMenuItemClickListener {
-                agentController.createSession()
+            setOnItemLongClickListener { _, _, position, _ ->
+                agentSessionPopup?.dismiss()
+                confirmDeleteSession(sessions[position].id, sessions[position].title)
                 true
             }
-            if (agentController.sessions.size > 1) {
-                menu.add(getString(R.string.agent_delete_session)).setOnMenuItemClickListener {
-                    agentController.deleteActive()
-                    true
-                }
-            }
-            show()
         }
+        val typedValue = TypedValue()
+        theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, typedValue, true)
+        val minWidth = (280 * resources.displayMetrics.density).toInt()
+        agentSessionPopup = PopupWindow(
+            listView,
+            maxOf(anchor.width, minWidth),
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            elevation = 8f
+            setBackgroundDrawable(ColorDrawable(typedValue.data))
+            isOutsideTouchable = true
+            showAsDropDown(anchor)
+        }
+    }
+
+    private fun confirmDeleteSession(id: String, title: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.agent_delete_session)
+            .setMessage(getString(R.string.agent_delete_session_confirm, title))
+            .setPositiveButton(R.string.confirm) { _, _ -> agentController.deleteSession(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
 }
