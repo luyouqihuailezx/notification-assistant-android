@@ -39,6 +39,9 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
     companion object {
         val LOGGER = CustomLog("not-listener")
         private const val DUPLICATE_NOTIFICATION_TIME_WINDOW_MS = 30 * 1000L
+        private val UNREAD_COUNT_SUFFIX = Regex(
+            """\s*(?:[（(]\d+条(?:新消息)?[）)]|\[\d+条(?:新消息)?]|\d+条新消息|\d+条)\s*$"""
+        )
     }
 
     override fun onListenerConnected() {
@@ -198,8 +201,9 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
     }
 
     private fun getNotificationFromExtras(notificationExtras: Bundle): NotificationData {
-        val title =
+        val originalTitle =
             notificationExtras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+        val title = normalizeNotificationTitle(originalTitle)
 
         val conversationTitle =
             notificationExtras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)
@@ -241,5 +245,12 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
             peopleList = peopleList as String,
             titleBig = titleBig
         )
+    }
+
+    /**
+     * 去掉聊天应用附加在通知标题末尾的未读消息汇总信息，保证同一会话使用稳定标题入库。
+     */
+    private fun normalizeNotificationTitle(title: String): String {
+        return title.replace(UNREAD_COUNT_SUFFIX, "").trim()
     }
 }
