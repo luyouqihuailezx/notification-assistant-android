@@ -13,6 +13,6 @@ actions:
   - id: build-install-adb
     label: 编译并安装到 ADB 设备
     type: terminal
-    command: ./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk
+    command: ./gradlew assembleDebug && for serial in $(adb devices | awk 'NR > 1 && $2 == "device" { print $1 }'); do adb -s "$serial" install -r app/build/outputs/apk/debug/app-debug.apk || exit $?; done
     cwd: .
     group: 构建
