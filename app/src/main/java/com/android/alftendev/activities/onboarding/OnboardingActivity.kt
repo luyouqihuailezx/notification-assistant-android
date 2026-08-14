@@ -32,7 +32,9 @@ class OnboardingActivity : AppCompatActivity() {
         Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.onboarding)) }, navigationIcon = { TextButton(onClick = { if (step == 0) finish() else step-- }) { Text("‹") } }) }) { padding ->
             Column(Modifier.padding(padding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.onboarding_step_counter, step + 1, 3)); LinearProgressIndicator({ (step + 1) / 3f }, Modifier.fillMaxWidth())
-                when (step) { 0 -> AgentSetupFragment(); 1 -> PermissionsSetupFragment(); else -> AppSelectionSetupFragment() }
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    when (step) { 0 -> AgentSetupFragment(); 1 -> PermissionsSetupFragment(); else -> AppSelectionSetupFragment() }
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Button(onClick = ::nextStep) { Text(stringResource(if (step == 2) R.string.finish else R.string.next_step)) } }
             }
         }

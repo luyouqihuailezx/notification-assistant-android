@@ -46,7 +46,6 @@ import com.android.alftendev.utils.AuthUtils.askAuth
 import com.android.alftendev.utils.ImportExport
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
-import com.android.alftendev.utils.PermissionUtils
 import com.android.alftendev.utils.UiUtils
 import java.io.File
 
@@ -122,19 +121,7 @@ internal fun NotificationSettingsContent(showNavigation: Boolean = true) {
                     )
                 }
                 item { ActionItem(R.string.onboarding) { activity.startActivity(Intent(activity, OnboardingActivity::class.java)) } }
-                item { SettingsCategory(R.string.permissions) }
-                item {
-                    ActionItem(
-                        R.string.notification_listener_access,
-                        permissionSummary(activity, PermissionUtils.isNotificationServiceEnabled(activity))
-                    ) { PermissionUtils.openNotificationListenerSettings(activity) }
-                }
-                item {
-                    ActionItem(
-                        R.string.app_list_access,
-                        permissionSummary(activity, PermissionUtils.canReadInstalledApps(activity))
-                    ) { PermissionUtils.openAppDetailsSettings(activity) }
-                }
+                item { ActionItem(R.string.permissions) { activity.startActivity(Intent(activity, PermissionsActivity::class.java)) } }
                 item { SettingsCategory(R.string.notification_collection_apps) }
                 item { ActionItem(R.string.notification_collection_apps, stringResource(R.string.notification_collection_apps_summary)) { activity.startActivity(Intent(activity, BlackWhiteListActivity::class.java)) } }
                 item { SettingsCategory(R.string.export_import) }
@@ -151,7 +138,14 @@ internal fun NotificationSettingsContent(showNavigation: Boolean = true) {
     private fun isPasswordValid(password: String): Boolean = password.length >= 8 && password.any(Char::isDigit)
 
     @Composable
-    private fun SettingsCategory(title: Int) { Text(stringResource(title), Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp)) }
+    private fun SettingsCategory(title: Int) {
+        Text(
+            stringResource(title),
+            Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            style = androidx.compose.material3.MaterialTheme.typography.titleSmall
+        )
+    }
 
     @Composable
     private fun ActionItem(title: Int, summary: String? = null, onClick: () -> Unit) {
@@ -161,9 +155,6 @@ internal fun NotificationSettingsContent(showNavigation: Boolean = true) {
             supportingContent = summary?.let { { Text(it) } }
         )
     }
-
-    private fun permissionSummary(activity: AppCompatActivity, granted: Boolean): String =
-        "${if (granted) activity.getString(R.string.enabled) else activity.getString(R.string.disabled)} · ${activity.getString(R.string.go_to_settings)}"
 
     @Composable
     private fun HomeSettingsNavigation(activity: AppCompatActivity) {

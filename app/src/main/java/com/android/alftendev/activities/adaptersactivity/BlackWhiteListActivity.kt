@@ -10,56 +10,26 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.android.alftendev.MyApplication
@@ -79,169 +49,177 @@ class BlackWhiteListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         askAuth(this)
-        setContent { NotificationListenerTheme { BlackWhiteListScreen() } }
+        setContent {
+            NotificationListenerTheme {
+                Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.notification_collection_apps)) }) }) { padding ->
+                    AppSelectionContent(Modifier.padding(padding).fillMaxSize()) { showOperationError(it) }
+                }
+            }
+        }
         onBackPressedDispatcher.addCallback { finishAndRemoveTask() }
     }
 
-    @Composable
-    private fun BlackWhiteListScreen() {
-        val context = LocalContext.current
-        val transliterator = remember { Transliterator.getInstance("Han-Latin; Latin-ASCII") }
-        var allApps by remember { mutableStateOf<List<PackageName>>(emptyList()) }
-        var query by remember { mutableStateOf("") }
-        var loading by remember { mutableStateOf(true) }
-        var error by remember { mutableStateOf<String?>(null) }
-        var menuExpanded by remember { mutableStateOf(false) }
-
-        fun normalize(value: String) = transliterator.transliterate(value)
-            .replace(Regex("[^A-Za-z0-9]"), "").lowercase()
-        fun displayName(item: PackageName) = item.name?.takeIf { it.isNotBlank() } ?: item.pkg
-        fun sectionFor(item: PackageName) = normalize(displayName(item)).firstOrNull()
-            ?.uppercaseChar()?.takeIf { it in 'A'..'Z' }?.toString() ?: "#"
-        val comparator = compareBy<PackageName>({ normalize(displayName(it)) }, { it.pkg.lowercase() })
-        val filtered = remember(allApps, query) {
-            val normalizedQuery = normalize(query)
-            allApps.filter { normalizedQuery.isBlank() || normalize(displayName(it)).contains(normalizedQuery) || it.pkg.lowercase().contains(normalizedQuery) }
-                .sortedWith(comparator)
-        }
-        val sections = remember(filtered) {
-            filtered.map { sectionFor(it) }.distinct()
-        }
-        val gridState = rememberLazyGridState()
-        val scrollScope = rememberCoroutineScope()
-
-        fun report(throwable: Throwable) {
-            Log.e("BlackWhiteListActivity", "黑白名单操作失败", throwable)
-            error = throwable.stackTraceToString()
-        }
-        fun loadApps() {
-            loading = true
-            MyApplication.executor.execute {
-                try {
-                    DBUtils.addAllInstalledPackageNames()
-                    val installed = AppListCache.getInstalledUserApps().map { it.packageName }.toSet()
-                    val result = DBUtils.allPackageName().filter { it.pkg in installed }.sortedWith(comparator)
-                    runOnUiThread { allApps = result; loading = false }
-                } catch (throwable: Throwable) {
-                    Log.e("BlackWhiteListActivity", "应用列表加载失败", throwable)
-                    runOnUiThread { loading = false; error = throwable.stackTraceToString() }
-                }
+    private fun showOperationError(error: Throwable) {
+        val details = error.stackTraceToString()
+        Log.e("BlackWhiteListActivity", "应用选择操作失败", error)
+        val clipboard = getSystemService(ClipboardManager::class.java)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.operation_failed)
+            .setMessage(details)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton(R.string.copy_error) { _, _ ->
+                clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.error_details), details))
             }
-        }
-        fun update(app: PackageName, selected: Boolean) {
-            app.isWhiteList = selected
-            app.isBlackList = false
-            MyApplication.executor.execute {
-                try {
-                    val entity = DBUtils.getPackageName(app.pkg) ?: app
-                    entity.isWhiteList = selected
-                    entity.isBlackList = false
-                    MyApplication.packageNames.put(entity)
-                    PackageSettingsCache.updatePackage(entity.pkg, false, selected)
-                } catch (throwable: Throwable) {
-                    runOnUiThread {
-                        app.isWhiteList = !selected
-                        report(throwable)
-                    }
-                }
-            }
-        }
-        fun setAllSelected(selected: Boolean) {
-            MyApplication.executor.execute {
-                try {
-                    allApps.forEach { it.isWhiteList = selected; it.isBlackList = false }
-                    MyApplication.packageNames.put(allApps)
-                    PackageSettingsCache.initCache()
-                    runOnUiThread { allApps = allApps.toList() }
-                } catch (throwable: Throwable) { runOnUiThread { report(throwable) } }
-            }
-        }
-        fun removeSelected(app: PackageName) {
-            MyApplication.executor.execute {
-                try {
-                    val entity = DBUtils.getPackageName(app.pkg) ?: app
-                    entity.isWhiteList = false
-                    entity.isBlackList = false
-                    MyApplication.packageNames.put(entity)
-                    PackageSettingsCache.updatePackage(entity.pkg, false, false)
-                    runOnUiThread { app.isWhiteList = false; allApps = allApps.toList() }
-                } catch (throwable: Throwable) { runOnUiThread { report(throwable) } }
-            }
-        }
-        LaunchedEffect(Unit) { loadApps() }
-
-        Scaffold(topBar = { TopAppBar(
-            title = { Text(context.getString(R.string.notification_collection_apps)) },
-            actions = { Box {
-                IconButton(onClick = { menuExpanded = true }) { Icon(painterResource(R.drawable.baseline_settings_24), context.getString(R.string.select_all)) }
-                DropdownMenu(menuExpanded, { menuExpanded = false }) {
-                    DropdownMenuItem(text = { Text(context.getString(R.string.select_all)) }, onClick = { menuExpanded = false; setAllSelected(true) })
-                    DropdownMenuItem(text = { Text(context.getString(R.string.deselect_all)) }, onClick = { menuExpanded = false; setAllSelected(false) })
-                }
-            } }
-        ) }) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding)) {
-                val selected = allApps.filter { it.isWhiteList }
-                if (selected.isNotEmpty()) {
-                    Text(context.getString(R.string.added_apps), Modifier.padding(horizontal = 8.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        selected.forEach { app -> SelectedAppIcon(app) { removeSelected(app) } }
-                    }
-                    Spacer(Modifier.height(6.dp))
-                }
-                OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), label = { Text(context.getString(R.string.search_apps)) }, singleLine = true)
-                Box(Modifier.fillMaxSize()) {
-                    LazyVerticalGrid(GridCells.Adaptive(112.dp), state = gridState, contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        filtered.forEachIndexed { index, app ->
-                            val section = sectionFor(app)
-                            if (index == 0 || sectionFor(filtered[index - 1]) != section) {
-                                item(span = { GridItemSpan(maxLineSpan) }, key = "header_$section") {
-                                    Text(section, Modifier.padding(top = 8.dp, bottom = 2.dp), style = MaterialTheme.typography.labelLarge)
-                                }
-                            }
-                            item(key = app.pkg) {
-                                AppCard(app, displayName(app), { update(app, !app.isWhiteList) })
-                            }
-                        }
-                    }
-                    if (sections.isNotEmpty()) AlphabetIndex(sections, Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp)) { section ->
-                        val index = filtered.indexOfFirst { sectionFor(it) == section }
-                        if (index >= 0) scrollScope.launch { gridState.animateScrollToItem(index) }
-                    }
-                    if (loading) Text("正在加载…", Modifier.align(Alignment.Center))
-                }
-            }
-        }
-        error?.let { ErrorDialog("操作失败", it) { error = null } }
+            .show()
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwable) -> Unit) {
+    val context = LocalContext.current
+    val transliterator = remember { Transliterator.getInstance("Han-Latin; Latin-ASCII") }
+    var apps by remember { mutableStateOf<List<PackageName>>(emptyList()) }
+    var query by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(true) }
+    var actionsExpanded by remember { mutableStateOf(false) }
+    val gridState = rememberLazyGridState()
+    val scope = rememberCoroutineScope()
+
+    fun normalize(value: String) = transliterator.transliterate(value).replace(Regex("[^A-Za-z0-9]"), "").lowercase()
+    fun name(app: PackageName) = app.name?.takeIf { it.isNotBlank() } ?: app.pkg
+    fun section(app: PackageName) = normalize(name(app)).firstOrNull()?.uppercaseChar()?.takeIf { it in 'A'..'Z' }?.toString() ?: "#"
+    val comparator = compareBy<PackageName>({ normalize(name(it)) }, { it.pkg.lowercase() })
+    val filtered = remember(apps, query) {
+        val normalized = normalize(query)
+        apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }.sortedWith(comparator)
+    }
+    val sections = remember(filtered) { filtered.map(::section).distinct() }
+
+    fun refreshApps() {
+        loading = true
+        MyApplication.executor.execute {
+            try {
+                DBUtils.addAllInstalledPackageNames()
+                val installed = AppListCache.getInstalledUserApps().map { it.packageName }.toSet()
+                val result = DBUtils.allPackageName().filter { it.pkg in installed }.sortedWith(comparator)
+                (context as? AppCompatActivity)?.runOnUiThread { apps = result; loading = false }
+            } catch (error: Throwable) {
+                Log.e("AppSelection", "应用列表加载失败", error)
+                (context as? AppCompatActivity)?.runOnUiThread { loading = false; onError(error) }
+            }
+        }
+    }
+    fun update(app: PackageName, selected: Boolean) {
+        val prior = app.isWhiteList
+        app.isWhiteList = selected
+        app.isBlackList = false
+        apps = apps.toList()
+        MyApplication.executor.execute {
+            try {
+                val entity = DBUtils.getPackageName(app.pkg) ?: app
+                entity.isWhiteList = selected
+                entity.isBlackList = false
+                MyApplication.packageNames.put(entity)
+                PackageSettingsCache.updatePackage(entity.pkg, false, selected)
+            } catch (error: Throwable) {
+                (context as? AppCompatActivity)?.runOnUiThread { app.isWhiteList = prior; apps = apps.toList(); onError(error) }
+            }
+        }
+    }
+    fun setAll(selected: Boolean) {
+        apps.forEach { it.isWhiteList = selected; it.isBlackList = false }
+        apps = apps.toList()
+        MyApplication.executor.execute {
+            try { MyApplication.packageNames.put(apps); PackageSettingsCache.initCache() }
+            catch (error: Throwable) { (context as? AppCompatActivity)?.runOnUiThread { onError(error); refreshApps() } }
+        }
+    }
+    LaunchedEffect(Unit) { refreshApps() }
+
+    Column(modifier) {
+        val selected = apps.filter { it.isWhiteList }
+        if (selected.isNotEmpty()) {
+            Text(stringResource(R.string.added_apps), Modifier.padding(horizontal = 8.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
+            Row(Modifier.fillMaxWidth().height(56.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                selected.forEach { app -> SelectedAppIcon(app) { update(app, false) } }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(query, { query = it }, Modifier.weight(1f), label = { Text(stringResource(R.string.search_apps)) }, singleLine = true)
+            Box {
+                IconButton(onClick = { actionsExpanded = true }) { Icon(painterResource(R.drawable.baseline_settings_24), stringResource(R.string.select_all)) }
+                DropdownMenu(actionsExpanded, { actionsExpanded = false }) {
+                    DropdownMenuItem({ Text(stringResource(R.string.select_all)) }, { actionsExpanded = false; setAll(true) })
+                    DropdownMenuItem({ Text(stringResource(R.string.deselect_all)) }, { actionsExpanded = false; setAll(false) })
+                }
+            }
+        }
+        Box(Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                GridCells.Adaptive(112.dp), state = gridState,
+                contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                filtered.forEachIndexed { index, app ->
+                    val currentSection = section(app)
+                    if (index == 0 || section(filtered[index - 1]) != currentSection) {
+                        item(span = { GridItemSpan(maxLineSpan) }, key = "header_$currentSection") { Text(currentSection, Modifier.padding(top = 8.dp, bottom = 2.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge) }
+                    }
+                    item(key = app.pkg) { AppCard(app, name(app)) { update(app, !app.isWhiteList) } }
+                }
+            }
+            if (sections.isNotEmpty()) {
+                AlphabetIndex(sections, Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp)) { target ->
+                    val appIndex = filtered.indexOfFirst { section(it) == target }
+                    if (appIndex >= 0) {
+                        val gridIndex = appIndex + filtered.take(appIndex).map(::section).distinct().size
+                        scope.launch { gridState.animateScrollToItem(gridIndex) }
+                    }
+                }
+            }
+            if (loading) CircularProgressIndicator(Modifier.align(Alignment.Center))
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SelectedAppIcon(app: PackageName, onRemove: () -> Unit) {
     val context = LocalContext.current
-    Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(48.dp).combinedClickable(onClick = {}, onLongClick = onRemove), contentScale = ContentScale.Fit)
+    Box(Modifier.size(48.dp).combinedClickable(onClick = onRemove, onLongClick = onRemove), contentAlignment = Alignment.Center) {
+        Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(40.dp), contentScale = ContentScale.Fit)
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppCard(app: PackageName, name: String, onToggle: () -> Unit) {
     val context = LocalContext.current
-    Card(Modifier.fillMaxWidth().combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (app.isWhiteList) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(40.dp))
-            Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
+    Card(Modifier.fillMaxWidth().height(126.dp).combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (app.isWhiteList) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+        Box(Modifier.fillMaxSize()) {
+            Checkbox(app.isWhiteList, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
+            Column(Modifier.fillMaxSize().padding(top = 10.dp, start = 8.dp, end = 8.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
+                    Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(56.dp), contentScale = ContentScale.Fit)
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
 
 @Composable
 private fun AlphabetIndex(sections: List<String>, modifier: Modifier, onSelect: (String) -> Unit) {
-    Column(modifier.pointerInput(sections) { detectTapGestures { offset -> onSelect(sections[(offset.y / size.height * sections.size).toInt().coerceIn(sections.indices)]) } }, verticalArrangement = Arrangement.SpaceEvenly, horizontalAlignment = Alignment.CenterHorizontally) {
+    fun selectAt(y: Float, height: Int) { if (height > 0) onSelect(sections[(y / height * sections.size).toInt().coerceIn(sections.indices)]) }
+    Column(
+        modifier
+            .pointerInput(sections) { detectTapGestures { selectAt(it.y, size.height) } }
+            .pointerInput(sections) { detectVerticalDragGestures(onDragStart = { selectAt(it.y, size.height) }, onVerticalDrag = { change, _ -> selectAt(change.position.y, size.height) }) },
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         sections.forEach { Text(it, style = MaterialTheme.typography.labelSmall) }
     }
-}
-
-@Composable
-private fun ErrorDialog(title: String, details: String, dismiss: () -> Unit) {
-    val context = LocalContext.current
-    AlertDialog(onDismissRequest = dismiss, title = { Text(title) }, text = { Text(details, maxLines = 8, overflow = TextOverflow.Ellipsis) }, confirmButton = { TextButton(onClick = { (context.getSystemService(ClipboardManager::class.java)).setPrimaryClip(ClipData.newPlainText("错误详情", details)) }) { Text(context.getString(R.string.copy_error)) } }, dismissButton = { TextButton(dismiss) { Text("关闭") } })
 }
