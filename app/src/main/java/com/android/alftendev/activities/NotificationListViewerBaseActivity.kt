@@ -142,6 +142,9 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
 
         runOnUiThread {
             uiDefaultSettings(this)
+            // 覆盖 uiDefaultSettings 的 adjustPan。该页面使用 Manifest 声明的
+            // adjustResize，让系统仅收缩内容区而不平移整块窗口内容。
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             setContentView(R.layout.activity_notification_list)
         }
 
