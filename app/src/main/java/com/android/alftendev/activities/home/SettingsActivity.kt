@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
@@ -22,10 +25,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
+import com.android.alftendev.MyApplication
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.adaptersactivity.BlackWhiteListActivity
@@ -34,10 +41,11 @@ import com.android.alftendev.activities.onboarding.OnboardingActivity
 import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.ui.theme.NotificationListenerTheme
 import com.android.alftendev.utils.AuthUtils.askAuth
-import com.android.alftendev.utils.DialogUtils.askPasswordForZipDialog
+import com.android.alftendev.utils.ImportExport
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
 import com.android.alftendev.utils.UiUtils
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 class SettingsActivity : AppCompatActivity() {
@@ -54,6 +62,38 @@ class SettingsActivity : AppCompatActivity() {
             mutableStateOf(
             getSharedPreferences(sharedPrefName, MODE_PRIVATE).getBoolean(RECORD_NOTIFICATIONS_ENABLED, false)
             )
+        }
+        var exportDialog by remember { mutableStateOf(false) }
+        var exportPassword by remember { mutableStateOf("") }
+        var exporting by remember { mutableStateOf(false) }
+        var exportResult by remember { mutableStateOf<Pair<String, String>?>(null) }
+        var exportError by remember { mutableStateOf<String?>(null) }
+        val clipboard = LocalClipboardManager.current
+        if (exportDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!exporting) exportDialog = false },
+                title = { Text(stringResource(R.string.zip_file_password)) },
+                text = { OutlinedTextField(exportPassword, { exportPassword = it }, label = { Text(stringResource(R.string.enter_zip_password)) }, visualTransformation = PasswordVisualTransformation()) },
+                confirmButton = { Button(enabled = !exporting, onClick = {
+                    if (exportPassword.isNotBlank() && !isPasswordValid(exportPassword)) {
+                        exportError = getString(R.string.password_invalid_alert)
+                    } else {
+                        exportDialog = false; exporting = true
+                        MyApplication.executor.execute {
+                            val result = ImportExport.exportDbZipEncrypted(this@SettingsActivity, exportPassword)
+                            runOnUiThread { exporting = false; if (result.first == "error") exportError = result.second else exportResult = result }
+                        }
+                    }
+                }) { Text(stringResource(R.string.create_zip)) } },
+                dismissButton = { androidx.compose.material3.TextButton(enabled = !exporting, onClick = { exportDialog = false }) { Text(stringResource(R.string.cancel)) } }
+            )
+        }
+        if (exporting) AlertDialog(onDismissRequest = {}, title = { Text(stringResource(R.string.export)) }, text = { CircularProgressIndicator() }, confirmButton = {})
+        exportResult?.let { result ->
+            AlertDialog(onDismissRequest = { File(result.first).delete(); exportResult = null }, title = { Text(stringResource(R.string.zip_password)) }, text = { Text(stringResource(R.string.password_should_copy) + "\n" + result.second) }, confirmButton = { Button(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(result.second)); File(result.first).delete(); exportResult = null }) { Text(stringResource(R.string.copy_string)) } }, dismissButton = { androidx.compose.material3.TextButton(onClick = { File(result.first).delete(); exportResult = null }) { Text(stringResource(R.string.cancel)) } })
+        }
+        exportError?.let { details ->
+            AlertDialog(onDismissRequest = { exportError = null }, title = { Text(stringResource(R.string.operation_failed)) }, text = { Text(details) }, confirmButton = { Button(onClick = { exportError = null }) { Text(stringResource(android.R.string.ok)) } }, dismissButton = { androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(details)); exportError = null }) { Text(stringResource(R.string.copy_error)) } })
         }
         Scaffold(
             topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }) },
@@ -79,7 +119,7 @@ class SettingsActivity : AppCompatActivity() {
                 item { SettingsCategory(R.string.notification_collection_apps) }
                 item { ActionItem(R.string.notification_collection_apps, R.string.notification_collection_apps_summary) { startActivity(Intent(this@SettingsActivity, BlackWhiteListActivity::class.java)) } }
                 item { SettingsCategory(R.string.export_import) }
-                item { ActionItem(R.string.export, R.string.exports_the_notification_database_to_a_password_encrypted_file) { askPasswordForZipDialog(this@SettingsActivity, this@SettingsActivity) } }
+                item { ActionItem(R.string.export, R.string.exports_the_notification_database_to_a_password_encrypted_file) { exportDialog = true } }
                 item { ActionItem(R.string.import_string, R.string.import_notification_database_password_generated_during_export_required) { startActivity(Intent(this@SettingsActivity, ImportActivity::class.java)) } }
                 item { SettingsCategory(R.string.notification_agent) }
                 item { ActionItem(R.string.agent_service_settings, R.string.agent_service_settings_summary) { startActivity(Intent(this@SettingsActivity, AgentSettingsActivity::class.java)) } }
@@ -88,6 +128,8 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun isPasswordValid(password: String): Boolean = password.length >= 8 && password.any(Char::isDigit)
 
     @Composable
     private fun SettingsCategory(title: Int) { Text(stringResource(title), Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp)) }

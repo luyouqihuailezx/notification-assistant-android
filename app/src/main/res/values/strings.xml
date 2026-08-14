@@ -117,7 +117,6 @@
     <string name="change_theme">更改主题</string>
     <string name="theme_changed">主题已更改，应用将重新加载</string>
     <string name="open_source_licenses">开源许可证</string>
-    <string name="MPAndroidChart_license">MPAndroidChart 许可证</string>
     <string name="app_license">应用许可证</string>
     <string name="licenses">许可证</string>
     <string name="notification_permission">通知权限</string>
