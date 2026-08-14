@@ -64,7 +64,7 @@ private fun PermissionItem(item: Pair<Int, Pair<() -> Boolean, () -> Unit>>, ref
     val granted = item.second.first()
     ListItem(
         headlineContent = { Text(stringResource(item.first)) },
-        supportingContent = { Text(stringResource(if (granted) R.string.enabled else R.string.disabled) + " · " + stringResource(R.string.go_to_settings)) },
+        supportingContent = { Text(stringResource(if (granted) R.string.enabled else R.string.disabled)) },
         modifier = Modifier.fillMaxWidth(),
         trailingContent = { TextButton({ item.second.second() }) { Text(stringResource(R.string.go_to_settings)) } }
     )

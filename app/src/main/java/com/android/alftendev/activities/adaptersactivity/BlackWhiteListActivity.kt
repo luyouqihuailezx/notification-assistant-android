@@ -174,7 +174,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                     val appIndex = filtered.indexOfFirst { section(it) == target }
                     if (appIndex >= 0) {
                         val gridIndex = appIndex + filtered.take(appIndex).map(::section).distinct().size
-                        scope.launch { gridState.animateScrollToItem(gridIndex) }
+                        scope.launch { gridState.scrollToItem(gridIndex) }
                     }
                 }
             }
@@ -200,8 +200,8 @@ private fun AppCard(app: PackageName, name: String, onToggle: () -> Unit) {
         Box(Modifier.fillMaxSize()) {
             Checkbox(app.isWhiteList, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
             Column(Modifier.fillMaxSize().padding(top = 10.dp, start = 8.dp, end = 8.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
-                    Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(56.dp), contentScale = ContentScale.Fit)
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(38.dp), contentScale = ContentScale.Fit)
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium)
