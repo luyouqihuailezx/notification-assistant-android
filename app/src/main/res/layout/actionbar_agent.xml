@@ -17,7 +17,7 @@
         android:paddingStart="4dp"
         android:paddingEnd="8dp"
         android:textAppearance="?attr/textAppearanceTitleMedium"
-        android:textColor="?attr/colorOnPrimary" />
+        android:textColor="?attr/colorOnSurface" />
 
     <TextView
         android:id="@+id/agentNewSession"
@@ -28,5 +28,5 @@
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:text="@string/agent_new_session"
-        android:textColor="?attr/colorOnPrimary" />
+        android:textColor="?attr/colorOnSurface" />
 </LinearLayout>
