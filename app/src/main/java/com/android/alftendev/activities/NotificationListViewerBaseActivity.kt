@@ -31,7 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -267,14 +267,22 @@ private fun NotificationList(
             Checkbox(selected.size == notifications.size && notifications.isNotEmpty(), { if (selected.size == notifications.size) notifications.forEach { if (it.entityId in selected) onToggle(it.entityId) } else notifications.forEach { if (it.entityId !in selected) onToggle(it.entityId) } })
             Text("已选择 ${selected.size} 项")
         }
-        Box(Modifier.fillMaxSize()) {
-            LazyColumn(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(notifications, key = Notifications::entityId) { notification ->
-                    NotificationRow(notification, notification.entityId in selected, selected.isNotEmpty(), onOpen, onToggle, onLongPress)
+        PullToRefreshBox(
+            isRefreshing = loading,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(notifications, key = Notifications::entityId) { notification ->
+                        NotificationRow(notification, notification.entityId in selected, selected.isNotEmpty(), onOpen, onToggle, onLongPress)
+                    }
                 }
+                if (loading && notifications.isEmpty()) Text("正在加载…", Modifier.align(Alignment.Center))
             }
-            if (loading) Text("正在加载…", Modifier.align(Alignment.Center))
-            FloatingActionButton(onClick = onRefresh, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) { Text("刷新") }
         }
     }
 }
