@@ -44,7 +44,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
@@ -149,9 +153,15 @@ private fun NotificationHost(
     var selected by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var detail by remember { mutableStateOf<Notifications?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmDeleteSession by remember { mutableStateOf(false) }
+    var sessionMenuExpanded by remember { mutableStateOf(false) }
     var permissionPrompt by remember { mutableStateOf(activity.javaClass.simpleName == "AllNotificationsActivity" && !getIsRecordNotificationsEnabled() && !getIsRecordNotificationsAlreadyAsked()) }
     var revision by remember { mutableIntStateOf(0) }
     val agentController = remember { AgentController(context) }
+    DisposableEffect(agentController) {
+        val unsubscribe = agentController.observe { revision++ }
+        onDispose(unsubscribe)
+    }
 
     fun refresh(filter: String = query) {
         loading = true
@@ -177,15 +187,53 @@ private fun NotificationHost(
     Scaffold(
         contentWindowInsets = WindowInsets.systemBars,
         topBar = {
-            TopAppBar(
-                title = { Text(if (title.isBlank()) context.getString(R.string.notification_history) else title) },
-                actions = {
-                    if (selected.isNotEmpty()) {
-                        IconButton(onClick = { confirmDelete = true }) {
-                            Icon(painterResource(R.drawable.baseline_delete_24), "删除")
+            CenterAlignedTopAppBar(
+                title = {
+                    when (tab) {
+                        HostTab.HISTORY -> Text(if (title.isBlank()) context.getString(R.string.notification_history) else title)
+                        HostTab.AGENT -> Box {
+                            TextButton(onClick = { sessionMenuExpanded = true }) {
+                                Text(context.getString(R.string.agent_session_title, agentController.active.title))
+                            }
+                            DropdownMenu(
+                                expanded = sessionMenuExpanded,
+                                onDismissRequest = { sessionMenuExpanded = false }
+                            ) {
+                                agentController.sessions.forEach { session ->
+                                    DropdownMenuItem(
+                                        text = { Text(session.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                        onClick = {
+                                            agentController.switchTo(session.id)
+                                            sessionMenuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
+                        HostTab.SETTINGS -> Text(context.getString(R.string.settings))
                     }
-                }
+                },
+                actions = {
+                    when (tab) {
+                        HostTab.HISTORY -> if (selected.isNotEmpty()) {
+                            IconButton(onClick = { confirmDelete = true }) {
+                                Icon(painterResource(R.drawable.baseline_delete_24), "删除")
+                            }
+                        }
+                        HostTab.AGENT -> {
+                            TextButton(onClick = { agentController.createSession() }) {
+                                Text(context.getString(R.string.agent_new_session))
+                            }
+                            IconButton(onClick = { confirmDeleteSession = true }) {
+                                Icon(painterResource(R.drawable.baseline_delete_24), "删除当前会话")
+                            }
+                        }
+                        HostTab.SETTINGS -> Unit
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
         bottomBar = {
@@ -238,6 +286,22 @@ private fun NotificationHost(
                 activity.getSharedPreferences(sharedPrefName, android.content.Context.MODE_PRIVATE).edit().putBoolean(RECORD_NOTIFICATIONS_ALREADY_ASKED, true).commit()
                 permissionPrompt = false
             }) { Text(context.getString(R.string.no)) } }
+        )
+    }
+    if (confirmDeleteSession) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteSession = false },
+            title = { Text(context.getString(R.string.agent_delete_session)) },
+            text = { Text(context.getString(R.string.agent_delete_session_confirm, agentController.active.title)) },
+            confirmButton = {
+                Button(onClick = {
+                    agentController.deleteSession(agentController.activeId)
+                    confirmDeleteSession = false
+                }) { Text(context.getString(R.string.confirm)) }
+            },
+            dismissButton = {
+                Button(onClick = { confirmDeleteSession = false }) { Text(context.getString(R.string.cancel)) }
+            }
         )
     }
     if (confirmDelete) {
