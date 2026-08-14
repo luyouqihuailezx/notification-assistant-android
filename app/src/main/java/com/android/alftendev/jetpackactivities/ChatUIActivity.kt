@@ -187,6 +187,7 @@ private fun ChatScaffold(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 },
+                expandedHeight = 48.dp,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colorScheme.primaryContainer,
                     titleContentColor = colorScheme.tertiary

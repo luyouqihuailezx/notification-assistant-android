@@ -6,9 +6,6 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.android.alftendev.utils.MySharedPref.getAreScreenshotBlocked
 
 class MyActivityLifecycleCallbacks : Application.ActivityLifecycleCallbacks {
@@ -24,19 +21,6 @@ class MyActivityLifecycleCallbacks : Application.ActivityLifecycleCallbacks {
         }
     }
 
-    override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
-        super.onActivityPostCreated(activity, savedInstanceState)
-
-        if (activity !is AppCompatActivity) {
-            return
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(activity.findViewById(android.R.id.content)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-    }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
     }
