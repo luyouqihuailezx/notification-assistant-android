@@ -3,7 +3,6 @@ package com.android.alftendev.utils
 import android.content.Context
 import android.content.res.Configuration
 import android.view.LayoutInflater
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +10,6 @@ import com.android.alftendev.R
 
 object UiUtils {
     fun uiDefaultSettings(activity: AppCompatActivity) {
-        activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         activity.supportActionBar?.setDisplayShowHomeEnabled(false)
         activity.supportActionBar?.setDisplayUseLogoEnabled(false)
     }
