@@ -2,6 +2,7 @@ package com.android.alftendev.activities.adaptersactivity
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.graphics.drawable.Drawable
 import android.icu.text.Transliterator
 import android.os.Bundle
 import android.util.Log
@@ -43,6 +44,9 @@ import com.android.alftendev.utils.computables.AppListCache
 import com.android.alftendev.utils.computables.PackageSettingsCache
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(ExperimentalMaterial3Api::class)
 class BlackWhiteListActivity : AppCompatActivity() {
@@ -188,7 +192,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
 private fun SelectedAppIcon(app: PackageName, onRemove: () -> Unit) {
     val context = LocalContext.current
     Box(Modifier.size(48.dp).combinedClickable(onClick = onRemove, onLongClick = onRemove), contentAlignment = Alignment.Center) {
-        Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(40.dp), contentScale = ContentScale.Fit)
+        LazyAppIcon(app.pkg, Modifier.size(40.dp), app.pkg)
     }
 }
 
@@ -201,13 +205,37 @@ private fun AppCard(app: PackageName, name: String, onToggle: () -> Unit) {
             Checkbox(app.isWhiteList, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
             Column(Modifier.fillMaxSize().padding(top = 8.dp, start = 4.dp, end = 4.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                    Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(38.dp), contentScale = ContentScale.Fit)
+                    LazyAppIcon(app.pkg, Modifier.size(38.dp), app.pkg)
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
             }
         }
     }
+}
+
+private val appIconCache = ConcurrentHashMap<String, Drawable>()
+
+@Composable
+private fun LazyAppIcon(packageName: String, modifier: Modifier, contentDescription: String?) {
+    val context = LocalContext.current
+    val icon by produceState<Drawable?>(initialValue = appIconCache[packageName], packageName) {
+        if (value != null) return@produceState
+        value = withContext(Dispatchers.IO) {
+            try {
+                AppIcon.compute(packageName)?.also { appIconCache[packageName] = it }
+            } catch (error: Throwable) {
+                Log.e("AppSelection", "应用图标加载失败：$packageName", error)
+                null
+            }
+        }
+    }
+    Image(
+        painter = rememberDrawablePainter(icon ?: context.getDrawable(R.drawable.baseline_android_24)),
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
 }
 
 @Composable
