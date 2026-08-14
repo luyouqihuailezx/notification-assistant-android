@@ -331,6 +331,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (isSettingsVisible) return
 
         hideAgentActionBar()
+        resetAgentKeyboardLayout()
         bottomNavigation.visibility = View.VISIBLE
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.settings)
@@ -351,6 +352,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (!isSettingsVisible && !isAgentVisible) return
 
         hideAgentActionBar()
+        resetAgentKeyboardLayout()
         bottomNavigation.visibility = View.VISIBLE
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.notification_history)
@@ -385,7 +387,23 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         }
         controller.observe { refreshAgentActionBar() }
         refreshAgentActionBar()
-        agentContainer.bindNotificationAgent(controller)
+        agentContainer.bindNotificationAgent(controller) { imeVisible ->
+            bottomNavigation.post { updateAgentKeyboardLayout(imeVisible) }
+        }
+    }
+
+    private fun updateAgentKeyboardLayout(imeVisible: Boolean) {
+        if (!isAgentVisible) return
+
+        val bottomNavigationHeight = bottomNavigation.height.toFloat()
+        val translation = if (imeVisible) bottomNavigationHeight else 0f
+        agentContainer.translationY = translation
+        bottomNavigation.translationY = translation
+    }
+
+    private fun resetAgentKeyboardLayout() {
+        agentContainer.translationY = 0f
+        bottomNavigation.translationY = 0f
     }
 
     private fun showAgentActionBar() {

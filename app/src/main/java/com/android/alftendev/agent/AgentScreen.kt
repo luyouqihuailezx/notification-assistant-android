@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
@@ -72,40 +71,22 @@ import com.android.alftendev.composes.utils.Typography
 import com.android.alftendev.utils.MySharedPref
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun ComposeView.bindNotificationAgent(controller: AgentController) {
-    val imeOverlapPx = mutableIntStateOf(0)
+fun ComposeView.bindNotificationAgent(
+    controller: AgentController,
+    onImeVisibilityChanged: (Boolean) -> Unit
+) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
-        logImeDiagnostics("insets", view, insets)
+        val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+        onImeVisibilityChanged(imeVisible)
         insets
     }
     setContent {
         AgentContentTheme {
-            NotificationAgentScreen(controller, imeOverlapPx.intValue)
+            NotificationAgentScreen(controller)
         }
     }
-    viewTreeObserver.addOnGlobalLayoutListener {
-        logImeDiagnostics("layout", this, ViewCompat.getRootWindowInsets(this))
-    }
     doOnAttach { ViewCompat.requestApplyInsets(it) }
-}
-
-private fun logImeDiagnostics(tag: String, view: android.view.View, insets: WindowInsetsCompat?) {
-    val location = IntArray(2)
-    view.getLocationInWindow(location)
-    val visibleFrame = android.graphics.Rect()
-    view.rootView.getWindowVisibleDisplayFrame(visibleFrame)
-    val imeCompat = insets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom
-    val imeVisible = insets?.isVisible(WindowInsetsCompat.Type.ime())
-    val systemWindowBottom = insets?.systemWindowInsetBottom
-    val stableBottom = insets?.stableInsetBottom
-    Log.i(
-        "AgentImeDiag",
-        "[$tag] sdk=${android.os.Build.VERSION.SDK_INT} imeCompat=$imeCompat imeVisible=$imeVisible " +
-            "systemWindowBottom=$systemWindowBottom stableBottom=$stableBottom " +
-            "viewTop=${location[1]} viewH=${view.height} rootH=${view.rootView.height} " +
-            "visibleFrameBottom=${visibleFrame.bottom} visibleFrameTop=${visibleFrame.top}"
-    )
 }
 
 @Composable
@@ -144,9 +125,8 @@ private fun AgentContentTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun NotificationAgentScreen(controller: AgentController, imeOverlapPx: Int) {
+private fun NotificationAgentScreen(controller: AgentController) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
@@ -154,7 +134,6 @@ private fun NotificationAgentScreen(controller: AgentController, imeOverlapPx: I
     var running by remember { mutableStateOf(false) }
     val cancelled = remember { AtomicBoolean(false) }
     val listState = rememberLazyListState()
-    val imeOverlapDp = with(density) { imeOverlapPx.toDp() }
     DisposableEffect(controller) {
         val unsubscribe = controller.observe { revision++ }
         onDispose { unsubscribe() }
@@ -218,7 +197,6 @@ private fun NotificationAgentScreen(controller: AgentController, imeOverlapPx: I
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(bottom = imeOverlapDp)
     ) {
         LazyColumn(
             state = listState,
