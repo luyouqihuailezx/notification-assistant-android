@@ -141,7 +141,8 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         askAuth(this)
 
         runOnUiThread {
-            uiDefaultSettings(this)
+            supportActionBar?.setDisplayShowHomeEnabled(false)
+            supportActionBar?.setDisplayUseLogoEnabled(false)
             setContentView(R.layout.activity_notification_list)
         }
 
