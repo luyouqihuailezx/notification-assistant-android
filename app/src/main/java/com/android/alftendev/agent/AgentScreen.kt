@@ -76,17 +76,7 @@ fun ComposeView.bindNotificationAgent(controller: AgentController) {
     val imeOverlapPx = mutableIntStateOf(0)
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
-        val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
-        val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-        val location = IntArray(2)
-        view.getLocationInWindow(location)
-        val viewBottom = location[1] + view.height
-        val imeTop = view.rootView.height - imeBottom
-        imeOverlapPx.intValue = if (imeVisible) {
-            (viewBottom - imeTop).coerceAtLeast(0)
-        } else {
-            0
-        }
+        logImeDiagnostics("insets", view, insets)
         insets
     }
     setContent {
@@ -94,7 +84,28 @@ fun ComposeView.bindNotificationAgent(controller: AgentController) {
             NotificationAgentScreen(controller, imeOverlapPx.intValue)
         }
     }
+    viewTreeObserver.addOnGlobalLayoutListener {
+        logImeDiagnostics("layout", this, ViewCompat.getRootWindowInsets(this))
+    }
     doOnAttach { ViewCompat.requestApplyInsets(it) }
+}
+
+private fun logImeDiagnostics(tag: String, view: android.view.View, insets: WindowInsetsCompat?) {
+    val location = IntArray(2)
+    view.getLocationInWindow(location)
+    val visibleFrame = android.graphics.Rect()
+    view.rootView.getWindowVisibleDisplayFrame(visibleFrame)
+    val imeCompat = insets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom
+    val imeVisible = insets?.isVisible(WindowInsetsCompat.Type.ime())
+    val systemWindowBottom = insets?.systemWindowInsetBottom
+    val stableBottom = insets?.stableInsetBottom
+    Log.i(
+        "AgentImeDiag",
+        "[$tag] sdk=${android.os.Build.VERSION.SDK_INT} imeCompat=$imeCompat imeVisible=$imeVisible " +
+            "systemWindowBottom=$systemWindowBottom stableBottom=$stableBottom " +
+            "viewTop=${location[1]} viewH=${view.height} rootH=${view.rootView.height} " +
+            "visibleFrameBottom=${visibleFrame.bottom} visibleFrameTop=${visibleFrame.top}"
+    )
 }
 
 @Composable

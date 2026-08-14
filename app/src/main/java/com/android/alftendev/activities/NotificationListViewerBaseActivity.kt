@@ -364,7 +364,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showAgent() {
         if (isAgentVisible) return
 
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         bottomNavigation.visibility = View.VISIBLE
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
