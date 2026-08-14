@@ -157,9 +157,9 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         }
         Box(Modifier.fillMaxSize()) {
             LazyVerticalGrid(
-                GridCells.Adaptive(112.dp), state = gridState,
+                GridCells.Adaptive(92.dp), state = gridState,
                 contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 filtered.forEachIndexed { index, app ->
                     val currentSection = section(app)
@@ -196,15 +196,15 @@ private fun SelectedAppIcon(app: PackageName, onRemove: () -> Unit) {
 @Composable
 private fun AppCard(app: PackageName, name: String, onToggle: () -> Unit) {
     val context = LocalContext.current
-    Card(Modifier.fillMaxWidth().height(126.dp).combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (app.isWhiteList) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(Modifier.fillMaxWidth().height(104.dp).combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (app.isWhiteList) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
         Box(Modifier.fillMaxSize()) {
             Checkbox(app.isWhiteList, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
-            Column(Modifier.fillMaxSize().padding(top = 10.dp, start = 8.dp, end = 8.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Column(Modifier.fillMaxSize().padding(top = 8.dp, start = 4.dp, end = 4.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
                     Image(rememberDrawablePainter(AppIcon.compute(app.pkg) ?: context.getDrawable(R.drawable.baseline_android_24)), app.pkg, Modifier.size(38.dp), contentScale = ContentScale.Fit)
                 }
-                Spacer(Modifier.height(6.dp))
-                Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
             }
         }
     }
