@@ -84,6 +84,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     val context = LocalContext.current
     val transliterator = remember { Transliterator.getInstance("Han-Latin; Latin-ASCII") }
     var apps by remember { mutableStateOf<List<PackageName>>(emptyList()) }
+    var selectionRevision by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var actionsExpanded by remember { mutableStateOf(false) }
@@ -95,7 +96,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     fun name(app: PackageName) = app.name?.takeIf { it.isNotBlank() } ?: app.pkg
     fun section(app: PackageName) = normalize(name(app)).firstOrNull()?.uppercaseChar()?.takeIf { it in 'A'..'Z' }?.toString() ?: "#"
     val comparator = compareBy<PackageName>({ normalize(name(it)) }, { it.pkg.lowercase() })
-    val filtered = remember(apps, query) {
+    val filtered = remember(apps, query, selectionRevision) {
         val normalized = normalize(query)
         apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }.sortedWith(comparator)
     }
@@ -108,7 +109,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                 DBUtils.addAllInstalledPackageNames()
                 val installed = AppListCache.getInstalledUserApps().map { it.packageName }.toSet()
                 val result = DBUtils.allPackageName().filter { it.pkg in installed }.sortedWith(comparator)
-                (context as? AppCompatActivity)?.runOnUiThread { apps = result; loading = false }
+                (context as? AppCompatActivity)?.runOnUiThread { apps = result; selectionRevision++; loading = false }
             } catch (error: Throwable) {
                 Log.e("AppSelection", "应用列表加载失败", error)
                 (context as? AppCompatActivity)?.runOnUiThread { loading = false; onError(error) }
@@ -119,7 +120,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         val prior = app.isWhiteList
         app.isWhiteList = selected
         app.isBlackList = false
-        apps = apps.toList()
+        selectionRevision++
         MyApplication.executor.execute {
             try {
                 val entity = DBUtils.getPackageName(app.pkg) ?: app
@@ -128,13 +129,17 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                 MyApplication.packageNames.put(entity)
                 PackageSettingsCache.updatePackage(entity.pkg, false, selected)
             } catch (error: Throwable) {
-                (context as? AppCompatActivity)?.runOnUiThread { app.isWhiteList = prior; apps = apps.toList(); onError(error) }
+                (context as? AppCompatActivity)?.runOnUiThread {
+                    app.isWhiteList = prior
+                    selectionRevision++
+                    onError(error)
+                }
             }
         }
     }
     fun setAll(selected: Boolean) {
         apps.forEach { it.isWhiteList = selected; it.isBlackList = false }
-        apps = apps.toList()
+        selectionRevision++
         MyApplication.executor.execute {
             try { MyApplication.packageNames.put(apps); PackageSettingsCache.initCache() }
             catch (error: Throwable) { (context as? AppCompatActivity)?.runOnUiThread { onError(error); refreshApps() } }
