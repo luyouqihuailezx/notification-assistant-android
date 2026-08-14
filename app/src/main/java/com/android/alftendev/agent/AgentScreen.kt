@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Divider
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -31,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -59,6 +62,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -195,22 +200,35 @@ private fun NotificationAgentScreen(controller: AgentController) {
             items(active.messages, key = AgentMessage::id) { AgentBubble(it) }
             if (running) item { LoadingReply { cancelled.set(true); running = false } }
         }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it },
-                modifier = Modifier.weight(1f),
-                enabled = !running,
-                placeholder = { Text("询问通知历史") },
-                maxLines = 4
-            )
-            Spacer(Modifier.width(8.dp))
-            Button(onClick = ::send, enabled = input.isNotBlank() && !running) { Text("发送") }
+        Surface(tonalElevation = 3.dp) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("询问通知历史") },
+                    maxLines = 5,
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(onSend = { send() })
+                )
+                Spacer(Modifier.width(8.dp))
+                if (running) {
+                    FilledTonalButton(onClick = { cancelled.set(true); running = false }) {
+                        Text("停止")
+                    }
+                } else {
+                    Button(onClick = ::send, enabled = input.isNotBlank()) { Text("发送") }
+                }
+            }
         }
     }
     error?.let { ErrorDialog(it, onDismiss = { error = null }) }

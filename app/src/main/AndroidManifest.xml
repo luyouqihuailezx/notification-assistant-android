@@ -113,22 +113,26 @@
             android:name=".activities.home.AllNotificationsActivity"
             android:exported="false"
             android:label="@string/all_notification"
-            android:screenOrientation="behind" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.home.ChatsActivity"
             android:exported="false"
             android:label="@string/chat"
-            android:screenOrientation="behind" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.home.GroupChatActivity"
             android:exported="false"
             android:label="@string/group_chat"
-            android:screenOrientation="behind" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.home.DeletedNotificationsActivity"
             android:exported="false"
             android:label="@string/deleted_notification"
-            android:screenOrientation="behind" />
+            android:screenOrientation="behind"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.adaptersactivity.ListSearchActivity"
             android:exported="false"

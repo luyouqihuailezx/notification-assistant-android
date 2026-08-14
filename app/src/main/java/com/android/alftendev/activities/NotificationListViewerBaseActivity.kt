@@ -142,6 +142,9 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
 
         runOnUiThread {
             uiDefaultSettings(this)
+            // 整个界面只使用一种软键盘模式：内容随键盘收缩，不再运行时切换，
+            // 避免窗口整体上移以及部分机型在切换模式时收起键盘。
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             setContentView(R.layout.activity_notification_list)
         }
 
@@ -331,9 +334,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (isSettingsVisible) return
 
         hideAgentActionBar()
-        resetAgentKeyboardLayout()
-        bottomNavigation.visibility = View.VISIBLE
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.settings)
         notificationHistoryContent.visibility = View.GONE
         agentContainer.visibility = View.GONE
@@ -352,9 +352,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (!isSettingsVisible && !isAgentVisible) return
 
         hideAgentActionBar()
-        resetAgentKeyboardLayout()
-        bottomNavigation.visibility = View.VISIBLE
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.notification_history)
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.GONE
@@ -366,8 +363,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showAgent() {
         if (isAgentVisible) return
 
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        bottomNavigation.visibility = View.VISIBLE
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.VISIBLE
@@ -388,10 +383,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         controller.observe { refreshAgentActionBar() }
         refreshAgentActionBar()
         agentContainer.bindNotificationAgent(controller)
-    }
-
-    private fun resetAgentKeyboardLayout() {
-        bottomNavigation.visibility = View.VISIBLE
     }
 
     private fun showAgentActionBar() {
