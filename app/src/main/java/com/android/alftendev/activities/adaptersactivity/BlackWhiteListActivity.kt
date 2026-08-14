@@ -87,6 +87,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var actionsExpanded by remember { mutableStateOf(false) }
+    var appPendingRemoval by remember { mutableStateOf<PackageName?>(null) }
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
 
@@ -146,7 +147,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         if (selected.isNotEmpty()) {
             Text(stringResource(R.string.added_apps), Modifier.padding(horizontal = 8.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
             Row(Modifier.fillMaxWidth().height(56.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                selected.forEach { app -> SelectedAppIcon(app) { update(app, false) } }
+                selected.forEach { app -> SelectedAppIcon(app) { appPendingRemoval = app } }
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -184,6 +185,21 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
             }
             if (loading) CircularProgressIndicator(Modifier.align(Alignment.Center))
         }
+    }
+    appPendingRemoval?.let { app ->
+        AlertDialog(
+            onDismissRequest = { appPendingRemoval = null },
+            title = { Text(stringResource(R.string.remove_added_app)) },
+            text = { Text(name(app)) },
+            confirmButton = {
+                TextButton(onClick = { update(app, false); appPendingRemoval = null }) {
+                    Text(stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appPendingRemoval = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
 }
 
