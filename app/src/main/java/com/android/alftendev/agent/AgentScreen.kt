@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,14 +64,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
-fun NotificationAgentScreen(controller: AgentController) {
+fun NotificationAgentScreen(
+    controller: AgentController,
+    initialBottomPadding: Dp
+) {
     val context = LocalContext.current
+    val imeBottomPadding = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    val keyboardPadding = (imeBottomPadding - initialBottomPadding).coerceAtLeast(0.dp)
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
@@ -140,7 +148,7 @@ fun NotificationAgentScreen(controller: AgentController) {
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .imePadding()
+            .padding(bottom = keyboardPadding)
     ) {
         LazyColumn(
             state = listState,

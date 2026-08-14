@@ -263,7 +263,9 @@ private fun NotificationHost(
                 onToggle = { id -> selected = selected.toMutableSet().apply { if (!add(id)) remove(id) } },
                 onLongPress = { id -> selected = selected + id }
             )
-            HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) { NotificationAgentScreen(agentController) }
+            HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
+                NotificationAgentScreen(agentController, padding.calculateBottomPadding())
+            }
             HostTab.SETTINGS -> ComposeSettingsPlaceholder(Modifier.padding(padding), onOpenSettings, onOpenAgentSettings)
         }
     }
