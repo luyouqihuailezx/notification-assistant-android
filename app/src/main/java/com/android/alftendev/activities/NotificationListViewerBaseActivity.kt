@@ -70,6 +70,7 @@ import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.AgentSettingsActivity
 import com.android.alftendev.activities.home.SettingsActivity
+import com.android.alftendev.activities.home.NotificationSettingsContent
 import com.android.alftendev.agent.AgentController
 import com.android.alftendev.agent.NotificationAgentScreen
 import com.android.alftendev.models.Notifications
@@ -266,7 +267,9 @@ private fun NotificationHost(
             HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
                 NotificationAgentScreen(agentController, padding.calculateBottomPadding())
             }
-            HostTab.SETTINGS -> ComposeSettingsPlaceholder(Modifier.padding(padding), onOpenSettings, onOpenAgentSettings)
+            HostTab.SETTINGS -> Box(Modifier.fillMaxSize().padding(padding)) {
+                NotificationSettingsContent(showNavigation = false)
+            }
         }
     }
     error?.let { details -> CopyableErrorDialog("通知加载失败", details) { error = null } }
@@ -379,16 +382,6 @@ private fun NotificationRow(notification: Notifications, isSelected: Boolean, se
                 Text(dateFormatterCompact(notification.time), style = MaterialTheme.typography.labelSmall)
             }
         }
-    }
-}
-
-@Composable
-private fun ComposeSettingsPlaceholder(modifier: Modifier, onOpenSettings: () -> Unit, onOpenAgentSettings: () -> Unit) {
-    Column(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("设置", style = MaterialTheme.typography.headlineSmall)
-        Text("设置页面正在迁移为 Compose。现有设置功能仍可直接打开。")
-        Button(onClick = onOpenSettings) { Text("打开完整设置") }
-        Button(onClick = onOpenAgentSettings) { Text("智能体服务设置") }
     }
 }
 
