@@ -67,16 +67,6 @@
             android:label="@string/permissions"
             android:screenOrientation="behind" />
         <activity
-            android:name=".activities.specificactivity.SpecificGraphActivity"
-            android:exported="false"
-            android:label="@string/info_specific_graph"
-            android:screenOrientation="behind" />
-        <activity
-            android:name=".activities.home.PieGraphActivity"
-            android:exported="false"
-            android:label="@string/graph"
-            android:screenOrientation="behind" />
-        <activity
             android:name=".activities.adaptersactivity.IsChatActivity"
             android:exported="false"
             android:label="@string/isChatActivity"

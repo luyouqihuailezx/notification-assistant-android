@@ -3,453 +3,316 @@ package com.android.alftendev.activities
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.text.Editable
-import android.text.TextWatcher
-import android.graphics.drawable.ColorDrawable
-import android.util.TypedValue
-import android.view.View
-import android.view.WindowManager
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.ListView
-import android.widget.PopupWindow
-import android.widget.TextView
+import android.util.Log
+import androidx.activity.compose.setContent
 import androidx.activity.addCallback
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.platform.ComposeView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.android.alftendev.MyApplication
 import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.sharedPrefName
 import com.android.alftendev.R
+import com.android.alftendev.activities.home.AgentSettingsActivity
 import com.android.alftendev.activities.home.SettingsActivity
 import com.android.alftendev.agent.AgentController
-import com.android.alftendev.agent.AgentSessionMenuAdapter
-import com.android.alftendev.agent.bindNotificationAgent
-import com.android.alftendev.adapters.NotificationsAdapter
+import com.android.alftendev.agent.NotificationAgentScreen
 import com.android.alftendev.models.Notifications
+import com.android.alftendev.models.getParsedNoti
+import com.android.alftendev.services.NotificationListenerKeepAlive
+import com.android.alftendev.ui.theme.NotificationListenerTheme
 import com.android.alftendev.utils.AuthUtils.askAuth
 import com.android.alftendev.utils.DBUtils
+import com.android.alftendev.utils.DateUtils.dateFormatterCompact
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ALREADY_ASKED
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
-import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.utils.MySharedPref.getIsRecordNotificationsAlreadyAsked
 import com.android.alftendev.utils.MySharedPref.getIsRecordNotificationsEnabled
 import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
 import com.android.alftendev.utils.PermissionUtils.isNotificationServiceEnabled
-import com.android.alftendev.utils.UiUtils
-import com.android.alftendev.utils.UiUtils.uiDefaultSettings
 import com.android.alftendev.utils.Utils
-import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
-    NotificationsAdapter.OnSelectionChangeListener {
-    private companion object {
-        const val STATE_SELECTED_TAB = "selected_tab"
-        const val SEARCH_DEBOUNCE_MS = 300L
-    }
-
-    open lateinit var recycleView: RecyclerView
-    open lateinit var etSearch: EditText
-    private lateinit var adapter: NotificationsAdapter
-    private lateinit var linearLayoutManager: LinearLayoutManager
-    private lateinit var bottomNavigation: BottomNavigationView
-    private lateinit var notificationHistoryContent: LinearLayout
-    private lateinit var settingsContainer: FrameLayout
-    private lateinit var agentContainer: ComposeView
-    private var agentController: AgentController? = null
-    private lateinit var agentActionBarView: View
-    private lateinit var agentSessionTitle: TextView
-    private var agentSessionPopup: PopupWindow? = null
-    private lateinit var swipeRefresh: SwipeRefreshLayout
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val loadGeneration = AtomicInteger(0)
-    private var pendingSearch: Runnable? = null
-    private var isSettingsVisible = false
-    private var isAgentVisible = false
-
-    private lateinit var llSelectionBar: LinearLayout
-    private lateinit var cbSelectAll: MaterialCheckBox
-    private lateinit var btnDeleteSelected: ImageButton
-
+abstract class NotificationListViewerBaseActivity : AppCompatActivity() {
     abstract fun getNotifications(): List<Notifications>
     abstract fun getNotificationsBySearch(filter: String): List<Notifications>
 
-    open fun refreshList(notifications: List<Notifications>) {
-        runOnUiThread {
-            //adapter = NotificationsAdapter(notifications, this, this)
-            //recycleView.adapter = adapter
-
-            if (!::adapter.isInitialized) {
-                adapter = NotificationsAdapter(notifications, this@NotificationListViewerBaseActivity, this@NotificationListViewerBaseActivity)
-                recycleView.adapter = adapter
-            } else {
-                adapter.updateData(notifications)
-            }
-
-            onSelectionModeChange(false)
-        }
-    }
-
-    private fun loadNotifications(load: () -> List<Notifications>, showRefreshing: Boolean = false) {
-        val generation = loadGeneration.incrementAndGet()
-        if (showRefreshing) swipeRefresh.isRefreshing = true
-        MyApplication.executor.execute {
-            runCatching(load)
-                .onSuccess { notifications ->
-                    if (generation == loadGeneration.get()) refreshList(notifications)
-                }
-                .onFailure { throwable ->
-                    if (generation == loadGeneration.get()) showLoadError(throwable)
-                }
-            if (showRefreshing) runOnUiThread { swipeRefresh.isRefreshing = false }
-        }
-    }
-
-    private fun showLoadError(throwable: Throwable) {
-        val details = throwable.stackTraceToString()
-        runOnUiThread {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("通知加载失败")
-                .setMessage(throwable.message ?: throwable.javaClass.name)
-                .setPositiveButton("复制完整错误信息") { _, _ ->
-                    (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager)
-                        .setPrimaryClip(ClipData.newPlainText("通知加载错误", details))
-                }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
-        }
-    }
-
     @SuppressLint("ApplySharedPref")
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
+        setTheme(com.android.alftendev.utils.UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
-
         askAuth(this)
-
-        runOnUiThread {
-            uiDefaultSettings(this)
-            setContentView(R.layout.activity_notification_list)
-        }
-
-        bottomNavigation = findViewById(R.id.bottomNavigation)
-        notificationHistoryContent = findViewById(R.id.notificationHistoryContent)
-        settingsContainer = findViewById(R.id.settingsContainer)
-        agentContainer = findViewById(R.id.agentContainer)
-        agentActionBarView = layoutInflater.inflate(R.layout.actionbar_agent, null)
-        agentSessionTitle = agentActionBarView.findViewById(R.id.agentSessionTitle)
-        swipeRefresh = findViewById(R.id.swipeRefresh)
-        swipeRefresh.setOnRefreshListener {
-            loadNotifications(::getNotifications, showRefreshing = true)
-        }
-        bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_history -> {
-                    showNotificationHistory()
-                    true
-                }
-                R.id.nav_settings -> {
-                    showSettings()
-                    true
-                }
-                R.id.nav_agent -> {
-                    showAgent()
-                    true
-                }
-                else -> false
-            }
-        }
-        val selectedTab = savedInstanceState?.getInt(STATE_SELECTED_TAB) ?: R.id.nav_history
-        bottomNavigation.selectedItemId = selectedTab
-
-        etSearch = findViewById(R.id.etSearch)
-        recycleView = findViewById(R.id.lvAll)
-        linearLayoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        linearLayoutManager.initialPrefetchItemCount = 4
-        recycleView.layoutManager = linearLayoutManager
-        recycleView.setItemViewCacheSize(8)
-
-        llSelectionBar = findViewById(R.id.llSelectionBar)
-        cbSelectAll = findViewById(R.id.cbSelectAll)
-        btnDeleteSelected = findViewById(R.id.btnDeleteSelected)
-
-        cbSelectAll.setOnClickListener {
-            if (::adapter.isInitialized) {
-                if (cbSelectAll.isChecked) {
-                    adapter.selectAll()
-                } else {
-                    adapter.deselectAll()
-                }
-            }
-        }
-
-        btnDeleteSelected.setOnClickListener {
-            if (::adapter.isInitialized && adapter.selectedItemsIds.isNotEmpty()) {
-                val builderDelete = MaterialAlertDialogBuilder(this)
-                builderDelete.setTitle(getString(R.string.confirm_delete_noti_warning))
-                builderDelete.setMessage(
-                    getString(
-                        R.string.are_you_sure_you_want_to_delete_the_selected_items_they_cannot_be_recovered,
-                        adapter.selectedItemsIds.size.toString()
-                    )
+        setContent {
+            NotificationListenerTheme {
+                NotificationHost(
+                    title = title?.toString().orEmpty(),
+                    load = ::getNotifications,
+                    search = ::getNotificationsBySearch,
+                    onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+                    onOpenAgentSettings = { startActivity(Intent(this, AgentSettingsActivity::class.java)) }
                 )
-                builderDelete.setIcon(R.mipmap.ic_launcher)
-
-                builderDelete.setPositiveButton(getString(R.string.confirm)) { _, _ ->
-                    val idsToDelete = adapter.selectedItemsIds.toList()
-
-                    MyApplication.executor.execute {
-                        DBUtils.deleteMultipleNotificationByIds(idsToDelete)
-
-                        refreshList(getNotifications())
-                    }
-                }
-
-                builderDelete.setNegativeButton(R.string.cancel) { _, _ -> }
-                builderDelete.setOnCancelListener { it.dismiss() }
-                builderDelete.create().show()
             }
         }
-
-        if (javaClass.simpleName == "AllNotificationsActivity") {
-            if (!getIsRecordNotificationsEnabled() && !getIsRecordNotificationsAlreadyAsked()) {
-                val sharedPref = this.getSharedPreferences(sharedPrefName, MODE_PRIVATE)
-                sharedPref.edit()
-                    .putBoolean(RECORD_NOTIFICATIONS_ALREADY_ASKED, true).commit()
-                runOnUiThread {
-                    val builder = MaterialAlertDialogBuilder(this)
-                    builder.setTitle(getString(R.string.ask_not_permission_title))
-                    builder.setMessage(getString(R.string.ask_not_permission))
-                    builder.setPositiveButton(
-                        getString(R.string.yes)
-                    ) { _, _ ->
-                        sharedPref.edit()
-                            .putBoolean(RECORD_NOTIFICATIONS_ENABLED, true).commit()
-                        NotificationListenerKeepAlive.scheduleHealthCheckIfActive(this)
-                        askNotificationServicePermission(this)
-                    }
-                    builder.setNegativeButton(getString(R.string.no)) { _, _ -> }
-                    builder.setNeutralButton(getString(R.string.privacy_policy)) { _, _ ->
-                        Utils.openLink(
-                            this,
-                            "https://alfio010.github.io/"
-                        )
-                    }
-                    builder.setOnCancelListener { it.dismiss() }
-                    builder.create()
-                    builder.show()
-                }
-            } else if (!isNotificationServiceEnabled(this)) {
-                runOnUiThread {
-                    UiUtils.showToast(getString(R.string.explain_not_permission), this)
-                }
-            }
-        }
-
-        etSearch.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable) = Unit
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) =
-                Unit
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                pendingSearch?.let(mainHandler::removeCallbacks)
-                val filter = s.toString()
-                pendingSearch = Runnable {
-                    loadNotifications(load = { getNotificationsBySearch(filter) })
-                }
-                mainHandler.postDelayed(pendingSearch!!, SEARCH_DEBOUNCE_MS)
-            }
-        })
-
-        //MyApplication.executor.execute { refreshList(getNotifications()) }
-
-        onBackPressedDispatcher.addCallback(this) {
-            if (::adapter.isInitialized && adapter.isSelectionMode) {
-                adapter.exitSelectionMode()
-            } else if (isSettingsVisible || isAgentVisible) {
-                bottomNavigation.selectedItemId = R.id.nav_history
-            } else {
-                finishAndRemoveTask()
-            }
-        }
-
-    }
-
-    override fun onSelectionModeChange(isSelectionMode: Boolean) {
-        runOnUiThread {
-            if (isSelectionMode) {
-                llSelectionBar.visibility = View.VISIBLE
-                etSearch.visibility = View.GONE
-            } else {
-                llSelectionBar.visibility = View.GONE
-                etSearch.visibility = View.VISIBLE
-                cbSelectAll.isChecked = false
-            }
-        }
-    }
-
-    override fun onSelectionCountChange(count: Int) {
-        runOnUiThread {
-            if (::adapter.isInitialized) {
-                cbSelectAll.isChecked = count > 0 && count == adapter.itemCount
-            }
-        }
+        onBackPressedDispatcher.addCallback(this) { finishAndRemoveTask() }
     }
 
     override fun onResume() {
         super.onResume()
-        loadNotifications(::getNotifications)
+        if (javaClass.simpleName == "AllNotificationsActivity" && !isNotificationServiceEnabled(this)) {
+            Log.w("NotificationList", getString(R.string.explain_not_permission))
+        }
     }
 
     override fun onDestroy() {
-        pendingSearch?.let(mainHandler::removeCallbacks)
         super.onDestroy()
-        if (javaClass.simpleName == "AllNotificationsActivity") {
-            authSuccess.set(false)
+        if (javaClass.simpleName == "AllNotificationsActivity") authSuccess.set(false)
+    }
+
+}
+
+private enum class HostTab { HISTORY, AGENT, SETTINGS }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotificationHost(
+    title: String,
+    load: () -> List<Notifications>,
+    search: (String) -> List<Notifications>,
+    onOpenSettings: () -> Unit,
+    onOpenAgentSettings: () -> Unit
+) {
+    val context = LocalContext.current
+    val activity = context as NotificationListViewerBaseActivity
+    var tab by remember { mutableStateOf(HostTab.HISTORY) }
+    var notifications by remember { mutableStateOf<List<Notifications>>(emptyList()) }
+    var query by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var selected by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var detail by remember { mutableStateOf<Notifications?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var permissionPrompt by remember { mutableStateOf(activity.javaClass.simpleName == "AllNotificationsActivity" && !getIsRecordNotificationsEnabled() && !getIsRecordNotificationsAlreadyAsked()) }
+    var revision by remember { mutableIntStateOf(0) }
+    val agentController = remember { AgentController(context) }
+
+    fun refresh(filter: String = query) {
+        loading = true
+        MyApplication.executor.execute {
+            runCatching { if (filter.isBlank()) load() else search(filter) }
+                .onSuccess { result -> activity.runOnUiThread { notifications = result; loading = false; revision++ } }
+                .onFailure { throwable ->
+                    Log.e("NotificationList", "通知加载失败", throwable)
+                    activity.runOnUiThread { error = throwable.stackTraceToString(); loading = false }
+                }
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putInt(STATE_SELECTED_TAB, bottomNavigation.selectedItemId)
-        super.onSaveInstanceState(outState)
+    LaunchedEffect(Unit) { refresh("") }
+    LaunchedEffect(query) {
+        if (query.isNotEmpty()) {
+            delay(300)
+            refresh(query)
+        } else refresh("")
     }
+    DisposableEffect(tab) { onDispose { selected = emptySet() } }
 
-    private fun showSettings() {
-        if (isSettingsVisible) return
-
-        hideAgentActionBar()
-        supportActionBar?.title = getString(R.string.settings)
-        notificationHistoryContent.visibility = View.GONE
-        agentContainer.visibility = View.GONE
-        settingsContainer.visibility = View.VISIBLE
-        isSettingsVisible = true
-        isAgentVisible = false
-
-        if (supportFragmentManager.findFragmentById(R.id.settingsContainer) == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.settingsContainer, SettingsActivity.SettingsFragment())
-                .commit()
-        }
-    }
-
-    private fun showNotificationHistory() {
-        if (!isSettingsVisible && !isAgentVisible) return
-
-        hideAgentActionBar()
-        supportActionBar?.title = getString(R.string.notification_history)
-        settingsContainer.visibility = View.GONE
-        agentContainer.visibility = View.GONE
-        notificationHistoryContent.visibility = View.VISIBLE
-        isSettingsVisible = false
-        isAgentVisible = false
-    }
-
-    private fun showAgent() {
-        if (isAgentVisible) return
-
-        notificationHistoryContent.visibility = View.GONE
-        settingsContainer.visibility = View.GONE
-        agentContainer.visibility = View.VISIBLE
-        isSettingsVisible = false
-        isAgentVisible = true
-        ensureAgentInitialized()
-        showAgentActionBar()
-    }
-
-    private fun ensureAgentInitialized() {
-        if (agentController != null) return
-        val controller = AgentController(this)
-        agentController = controller
-        agentSessionTitle.setOnClickListener { showAgentSessionMenu(it) }
-        agentActionBarView.findViewById<View>(R.id.agentNewSession).setOnClickListener {
-            controller.createSession()
-        }
-        controller.observe { refreshAgentActionBar() }
-        refreshAgentActionBar()
-        agentContainer.bindNotificationAgent(controller)
-    }
-
-    private fun showAgentActionBar() {
-        supportActionBar?.apply {
-            setDisplayShowTitleEnabled(false)
-            setDisplayShowCustomEnabled(true)
-            setCustomView(
-                agentActionBarView,
-                ActionBar.LayoutParams(
-                    ActionBar.LayoutParams.MATCH_PARENT,
-                    ActionBar.LayoutParams.MATCH_PARENT
-                )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (title.isBlank()) context.getString(R.string.notification_history) else title) },
+                actions = {
+                    if (selected.isNotEmpty()) {
+                        IconButton(onClick = { confirmDelete = true }) {
+                            Icon(painterResource(R.drawable.baseline_delete_24), "删除")
+                        }
+                    }
+                }
             )
-        }
-        refreshAgentActionBar()
-    }
-
-    private fun hideAgentActionBar() {
-        agentSessionPopup?.dismiss()
-        supportActionBar?.apply {
-            setDisplayShowCustomEnabled(false)
-            setDisplayShowTitleEnabled(true)
-        }
-    }
-
-    private fun refreshAgentActionBar() {
-        val controller = agentController ?: return
-        agentSessionTitle.text = getString(R.string.agent_session_title, controller.active.title)
-    }
-
-    private fun showAgentSessionMenu(anchor: View) {
-        val controller = agentController ?: return
-        agentSessionPopup?.dismiss()
-        val sessions = controller.sessions
-        val listView = ListView(this).apply {
-            adapter = AgentSessionMenuAdapter(this@NotificationListViewerBaseActivity, sessions, controller.activeId)
-            divider = null
-            setOnItemClickListener { _, _, position, _ ->
-                controller.switchTo(sessions[position].id)
-                agentSessionPopup?.dismiss()
-            }
-            setOnItemLongClickListener { _, _, position, _ ->
-                agentSessionPopup?.dismiss()
-                confirmDeleteSession(sessions[position].id, sessions[position].title)
-                true
+        },
+        bottomBar = {
+            NavigationBar {
+                HostTab.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = item == tab,
+                        onClick = { tab = item },
+                        icon = { Icon(painterResource(when (item) {
+                            HostTab.HISTORY -> R.drawable.baseline_home_24
+                            HostTab.AGENT -> R.drawable.baseline_chat_24
+                            HostTab.SETTINGS -> R.drawable.baseline_settings_24
+                        }), null) },
+                        label = { Text(when (item) {
+                            HostTab.HISTORY -> context.getString(R.string.notification_history)
+                            HostTab.AGENT -> context.getString(R.string.notification_agent)
+                            HostTab.SETTINGS -> context.getString(R.string.settings)
+                        }) }
+                    )
+                }
             }
         }
-        val typedValue = TypedValue()
-        theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, typedValue, true)
-        val minWidth = (280 * resources.displayMetrics.density).toInt()
-        agentSessionPopup = PopupWindow(
-            listView,
-            maxOf(anchor.width, minWidth),
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            true
-        ).apply {
-            elevation = 8f
-            setBackgroundDrawable(ColorDrawable(typedValue.data))
-            isOutsideTouchable = true
-            showAsDropDown(anchor)
+    ) { padding ->
+        when (tab) {
+            HostTab.HISTORY -> NotificationList(
+                modifier = Modifier.padding(padding), notifications = notifications, query = query,
+                loading = loading, selected = selected, onQueryChange = { query = it },
+                onRefresh = { refresh() }, onOpen = { detail = it },
+                onToggle = { id -> selected = selected.toMutableSet().apply { if (!add(id)) remove(id) } },
+                onLongPress = { id -> selected = selected + id }
+            )
+            HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) { NotificationAgentScreen(agentController) }
+            HostTab.SETTINGS -> ComposeSettingsPlaceholder(Modifier.padding(padding), onOpenSettings, onOpenAgentSettings)
         }
     }
-
-    private fun confirmDeleteSession(id: String, title: String) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.agent_delete_session)
-            .setMessage(getString(R.string.agent_delete_session_confirm, title))
-            .setPositiveButton(R.string.confirm) { _, _ -> agentController?.deleteSession(id) }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    error?.let { details -> CopyableErrorDialog("通知加载失败", details) { error = null } }
+    detail?.let { NotificationDetailDialog(it) { detail = null } }
+    if (permissionPrompt) {
+        AlertDialog(
+            onDismissRequest = { permissionPrompt = false },
+            title = { Text(context.getString(R.string.ask_not_permission_title)) },
+            text = { Text(context.getString(R.string.ask_not_permission)) },
+            confirmButton = { Button(onClick = {
+                activity.getSharedPreferences(sharedPrefName, android.content.Context.MODE_PRIVATE).edit().putBoolean(RECORD_NOTIFICATIONS_ALREADY_ASKED, true).putBoolean(RECORD_NOTIFICATIONS_ENABLED, true).commit()
+                NotificationListenerKeepAlive.scheduleHealthCheckIfActive(activity)
+                askNotificationServicePermission(activity)
+                permissionPrompt = false
+            }) { Text(context.getString(R.string.yes)) } },
+            dismissButton = { Button(onClick = {
+                activity.getSharedPreferences(sharedPrefName, android.content.Context.MODE_PRIVATE).edit().putBoolean(RECORD_NOTIFICATIONS_ALREADY_ASKED, true).commit()
+                permissionPrompt = false
+            }) { Text(context.getString(R.string.no)) } }
+        )
     }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(context.getString(R.string.confirm_delete_noti_warning)) },
+            text = { Text(context.getString(R.string.are_you_sure_you_want_to_delete_the_selected_items_they_cannot_be_recovered, selected.size.toString())) },
+            confirmButton = { Button(onClick = {
+                val deleting = selected
+                confirmDelete = false
+                selected = emptySet()
+                MyApplication.executor.execute {
+                    runCatching { DBUtils.deleteMultipleNotificationByIds(deleting.toList()) }
+                        .onSuccess { refresh() }
+                        .onFailure { throwable -> Log.e("NotificationList", "批量删除失败", throwable); activity.runOnUiThread { error = throwable.stackTraceToString() } }
+                }
+            }) { Text(context.getString(R.string.confirm)) } },
+            dismissButton = { Button(onClick = { confirmDelete = false }) { Text(context.getString(R.string.cancel)) } }
+        )
+    }
+}
 
+@Composable
+private fun NotificationList(
+    modifier: Modifier, notifications: List<Notifications>, query: String, loading: Boolean, selected: Set<Long>,
+    onQueryChange: (String) -> Unit, onRefresh: () -> Unit, onOpen: (Notifications) -> Unit,
+    onToggle: (Long) -> Unit, onLongPress: (Long) -> Unit
+) {
+    Column(modifier.fillMaxSize()) {
+        if (selected.isEmpty()) OutlinedTextField(query, onQueryChange, Modifier.fillMaxWidth().padding(12.dp), label = { Text("搜索通知") }, singleLine = true)
+        else Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(selected.size == notifications.size && notifications.isNotEmpty(), { if (selected.size == notifications.size) notifications.forEach { if (it.entityId in selected) onToggle(it.entityId) } else notifications.forEach { if (it.entityId !in selected) onToggle(it.entityId) } })
+            Text("已选择 ${selected.size} 项")
+        }
+        Box(Modifier.fillMaxSize()) {
+            LazyColumn(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(notifications, key = Notifications::entityId) { notification ->
+                    NotificationRow(notification, notification.entityId in selected, selected.isNotEmpty(), onOpen, onToggle, onLongPress)
+                }
+            }
+            if (loading) Text("正在加载…", Modifier.align(Alignment.Center))
+            FloatingActionButton(onClick = onRefresh, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) { Text("刷新") }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NotificationRow(notification: Notifications, isSelected: Boolean, selecting: Boolean, onOpen: (Notifications) -> Unit, onToggle: (Long) -> Unit, onLongPress: (Long) -> Unit) {
+    val context = LocalContext.current
+    val parsed = remember(notification.entityId) { getParsedNoti(notification.title, notification.text, notification.packageName.target.pkg, context) }
+    Card(Modifier.fillMaxWidth().combinedClickable(onClick = { if (selecting) onToggle(notification.entityId) else onOpen(notification) }, onLongClick = { onLongPress(notification.entityId) })) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (selecting) Checkbox(isSelected, { onToggle(notification.entityId) })
+            Column(Modifier.weight(1f)) {
+                Text(parsed.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(parsed.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(dateFormatterCompact(notification.time), style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComposeSettingsPlaceholder(modifier: Modifier, onOpenSettings: () -> Unit, onOpenAgentSettings: () -> Unit) {
+    Column(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("设置", style = MaterialTheme.typography.headlineSmall)
+        Text("设置页面正在迁移为 Compose。现有设置功能仍可直接打开。")
+        Button(onClick = onOpenSettings) { Text("打开完整设置") }
+        Button(onClick = onOpenAgentSettings) { Text("智能体服务设置") }
+    }
+}
+
+@Composable
+private fun NotificationDetailDialog(notification: Notifications, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(onDismissRequest = dismiss, title = { Text(notification.title) }, text = {
+        SelectionContainer { Text(notification.bigText?.trim().takeUnless { it.isNullOrBlank() } ?: notification.text) }
+    }, confirmButton = { Button(onClick = { Utils.openApp(notification.packageName.target.pkg, context); dismiss() }) { Text(context.getString(R.string.open_app)) } }, dismissButton = { Button(onClick = dismiss) { Text(context.getString(R.string.back)) } })
+}
+
+@Composable
+fun CopyableErrorDialog(title: String, details: String, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(onDismissRequest = dismiss, title = { Text(title) }, text = { Text(details, maxLines = 8, overflow = TextOverflow.Ellipsis) }, confirmButton = { Button(onClick = { (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("错误详情", details)) }) { Text("复制完整错误信息") } }, dismissButton = { Button(onClick = dismiss) { Text("关闭") } })
 }

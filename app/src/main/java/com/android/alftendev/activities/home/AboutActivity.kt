@@ -41,7 +41,6 @@ class AboutActivity : AppCompatActivity() {
             bindLicense("app_license", "file:///android_asset/gnu_license.html")
             bindLicense("licenses", "file:///android_asset/open_source_licenses.html")
             bindLicense("icon_licenses", "file:///android_asset/material_icon_license.html")
-            bindLicense("mp_chart_license", "file:///android_asset/apache_license.html")
         }
 
         private fun bindLicense(key: String, path: String) {

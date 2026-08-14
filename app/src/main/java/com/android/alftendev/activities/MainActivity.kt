@@ -3,142 +3,65 @@ package com.android.alftendev.activities
 import android.app.KeyguardManager
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.PromptInfo
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.android.alftendev.MyApplication.Companion.authSuccess
 import com.android.alftendev.MyApplication.Companion.executor
 import com.android.alftendev.R
 import com.android.alftendev.activities.home.AllNotificationsActivity
+import com.android.alftendev.activities.migration.LegacyDbMigrationActivity
 import com.android.alftendev.activities.onboarding.OnboardingActivity
 import com.android.alftendev.activities.onboarding.OnboardingSettings
-import com.android.alftendev.activities.migration.LegacyDbMigrationActivity
+import com.android.alftendev.ui.theme.NotificationListenerTheme
 import com.android.alftendev.utils.AuthUtils.haveToAskAuth
 import com.android.alftendev.utils.LegacyDbMigrationSettings
-import com.android.alftendev.utils.MySharedPref
-import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
-import com.android.alftendev.utils.PermissionUtils.isNotificationServiceEnabled
-import com.android.alftendev.utils.UiUtils
 import com.android.alftendev.utils.UiUtils.showToast
-import com.android.alftendev.utils.UiUtils.uiDefaultSettings
-import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var bReAuth: MaterialButton
-    private lateinit var bContinue: MaterialButton
+    private var needsRetry by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
-
-        if (LegacyDbMigrationSettings.needsMigration(this)) {
-            startActivity(Intent(this, LegacyDbMigrationActivity::class.java))
-            finish()
-            return
-        }
-
-        if (!OnboardingSettings(this).completed) {
-            startActivity(Intent(this, OnboardingActivity::class.java))
-            finish()
-            return
-        }
-
-
-        runOnUiThread {
-            setContentView(R.layout.activity_main)
-            uiDefaultSettings(this, false)
-        }
-
-        if (!haveToAskAuth()) {
-            val intent = Intent(this, AllNotificationsActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-
-        bReAuth = findViewById(R.id.bReAuth)
-        bContinue = findViewById(R.id.bContinue)
-
-        bContinue.setOnClickListener {
-            val intent = Intent(this, AllNotificationsActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-
-        initializeBiometricAuth()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (isNotificationServiceEnabled(this)) {
-            runOnUiThread {
-                bReAuth.visibility = View.GONE
-                bReAuth.text = getString(R.string.reauth)
-            }
-            initializeBiometricAuth()
-        }
-    }
-
-    private fun initializeBiometricAuth() {
-        if (haveToAskAuth()) {
-            val biometricPrompt = BiometricPrompt(
-                this, executor,
-                object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationError(
-                        errorCode: Int,
-                        errString: CharSequence
-                    ) {
-                        super.onAuthenticationError(errorCode, errString)
-                        runOnUiThread {
-                            showToast(getString(R.string.authErr), this@MainActivity)
-                            bReAuth.visibility = View.VISIBLE
-                        }
-                    }
-
-                    override fun onAuthenticationSucceeded(
-                        result: BiometricPrompt.AuthenticationResult
-                    ) {
-                        super.onAuthenticationSucceeded(result)
-                        authSuccess.set(true)
-                        runOnUiThread {
-                            showToast(getString(R.string.authSuccess), this@MainActivity)
-                        }
-                        val intent = Intent(this@MainActivity, AllNotificationsActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }
-
-                    override fun onAuthenticationFailed() {
-                        super.onAuthenticationFailed()
-                        runOnUiThread {
-                            showToast(getString(R.string.authFail), this@MainActivity)
-                            bReAuth.visibility = View.VISIBLE
-                        }
-                    }
-                })
-
-            val promptInfo = PromptInfo.Builder()
-                .setTitle(getString(R.string.biometric_title))
-                .setConfirmationRequired(false).apply {
-                    val km =
-                        this@MainActivity.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-                    if (km.isDeviceSecure) {
-                        @Suppress("DEPRECATION")
-                        setDeviceCredentialAllowed(true)
-                    } else {
-                        setNegativeButtonText(getString(R.string.cancel))
-                    }
-                }.build()
-
-            bReAuth.setOnClickListener {
-                runOnUiThread {
-                    biometricPrompt.authenticate(promptInfo)
+        if (LegacyDbMigrationSettings.needsMigration(this)) { startActivity(Intent(this, LegacyDbMigrationActivity::class.java)); finish(); return }
+        if (!OnboardingSettings(this).completed) { startActivity(Intent(this, OnboardingActivity::class.java)); finish(); return }
+        enableEdgeToEdge()
+        setContent {
+            NotificationListenerTheme {
+                Column(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterHorizontally) {
+                    if (needsRetry) Button(onClick = ::authenticate) { Text(getString(R.string.reauth)) }
+                    else Button(onClick = ::openHistory) { Text(getString(R.string.continuee)) }
                 }
             }
-
-            runOnUiThread {
-                biometricPrompt.authenticate(promptInfo)
-            }
         }
+        if (haveToAskAuth()) authenticate() else openHistory()
+    }
+
+    private fun openHistory() { startActivity(Intent(this, AllNotificationsActivity::class.java)); finish() }
+
+    private fun authenticate() {
+        if (!haveToAskAuth()) { openHistory(); return }
+        val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { needsRetry = true; showToast(getString(R.string.authErr), this@MainActivity) }
+            override fun onAuthenticationFailed() { needsRetry = true; showToast(getString(R.string.authFail), this@MainActivity) }
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { authSuccess.set(true); showToast(getString(R.string.authSuccess), this@MainActivity); openHistory() }
+        })
+        val info = PromptInfo.Builder().setTitle(getString(R.string.biometric_title)).setConfirmationRequired(false).apply {
+            val manager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+            if (manager.isDeviceSecure) @Suppress("DEPRECATION") setDeviceCredentialAllowed(true) else setNegativeButtonText(getString(R.string.cancel))
+        }.build()
+        prompt.authenticate(info)
     }
 }

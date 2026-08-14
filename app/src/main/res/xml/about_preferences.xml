@@ -9,6 +9,5 @@
         <Preference app:key="app_license" app:title="@string/app_license" />
         <Preference app:key="licenses" app:title="@string/open_source_licenses" />
         <Preference app:key="icon_licenses" app:title="@string/icon_licenses" />
-        <Preference app:key="mp_chart_license" app:title="@string/MPAndroidChart_license" />
     </PreferenceCategory>
 </PreferenceScreen>

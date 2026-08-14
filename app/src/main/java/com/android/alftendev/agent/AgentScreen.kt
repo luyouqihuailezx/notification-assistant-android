@@ -8,7 +8,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,7 +26,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -40,8 +39,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,10 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -70,56 +64,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
-import com.android.alftendev.composes.utils.Typography
-import com.android.alftendev.utils.MySharedPref
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun ComposeView.bindNotificationAgent(controller: AgentController) {
-    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-    setContent {
-        AgentContentTheme {
-            NotificationAgentScreen(controller)
-        }
-    }
-}
-
 @Composable
-private fun AgentContentTheme(content: @Composable () -> Unit) {
-    val dark = when (MySharedPref.getThemeOptions()) {
-        2 -> true
-        3 -> false
-        else -> isSystemInDarkTheme()
-    }
-    val colors = if (dark) {
-        darkColorScheme(
-            primary = colorResource(R.color.blue_dark),
-            onPrimary = Color.White,
-            secondary = colorResource(R.color.blue),
-            secondaryContainer = colorResource(R.color.background_dark_cardview),
-            background = colorResource(R.color.background_dark),
-            onBackground = colorResource(R.color.text_color_white),
-            surface = colorResource(R.color.background_dark),
-            onSurface = colorResource(R.color.text_color_white),
-            surfaceVariant = colorResource(R.color.background_dark_cardview)
-        )
-    } else {
-        lightColorScheme(
-            primary = colorResource(R.color.blue_dark),
-            onPrimary = Color.White,
-            secondary = colorResource(R.color.blue),
-            secondaryContainer = colorResource(R.color.cyan_light),
-            background = colorResource(R.color.background),
-            onBackground = colorResource(R.color.text_color_black),
-            surface = colorResource(R.color.background),
-            onSurface = colorResource(R.color.text_color_black),
-            surfaceVariant = colorResource(R.color.background_light_cardview)
-        )
-    }
-    MaterialTheme(colorScheme = colors, typography = Typography, content = content)
-}
-
-@Composable
-private fun NotificationAgentScreen(controller: AgentController) {
+fun NotificationAgentScreen(controller: AgentController) {
     val context = LocalContext.current
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
@@ -314,7 +262,7 @@ private fun MarkdownText(markdown: String) {
 
             when {
                 line.matches(Regex("^\\s{0,3}([-*_])(?:\\s*\\1){2,}\\s*$")) -> {
-                    Divider(Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 }
                 line.startsWith("> ") -> Text(
                     markdownAnnotated(line.removePrefix("> ")),

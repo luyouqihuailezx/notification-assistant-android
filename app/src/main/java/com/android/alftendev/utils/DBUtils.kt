@@ -5,8 +5,6 @@ import com.android.alftendev.MyApplication
 import com.android.alftendev.MyApplication.Companion.notifications
 import com.android.alftendev.MyApplication.Companion.packageNames
 import com.android.alftendev.R
-import com.android.alftendev.activities.home.PieGraphActivity.Companion.OTHERS_MAX_VALUE
-import com.android.alftendev.models.NotificationStatsItem
 import com.android.alftendev.models.Notifications
 import com.android.alftendev.models.Notifications_
 import com.android.alftendev.models.PackageName
@@ -428,103 +426,6 @@ object DBUtils {
             .orderDesc(PackageName_.entityId)
             .build()
             .findLazy()
-    }
-
-    fun getPercentNotifications(context: Context): MutableMap<String, Float> {
-        val countedPackageName: MutableMap<String, Int> = mutableMapOf()
-
-        notifications
-            .query()
-            .build()
-            .find()
-            .forEach { notification ->
-                val pkgName =
-                    notification.packageName.target.name ?: notification.packageName.target.pkg
-
-                if (pkgName.isNotBlank()) {
-                    if (countedPackageName.containsKey(pkgName)) {
-                        countedPackageName[pkgName] = countedPackageName[pkgName]!! + 1
-                    } else {
-                        countedPackageName[pkgName] = 1
-                    }
-                }
-            }
-
-        val totalNotifications = notifications
-            .query()
-            .build()
-            .count()
-            .toFloat()
-
-        val percentageMap: MutableMap<String, Float> = mutableMapOf()
-
-        countedPackageName.forEach {
-            percentageMap[it.key] = (it.value.toFloat() / totalNotifications) * 100f
-        }
-
-        var others = 0f
-
-        countedPackageName.forEach {
-            if (percentageMap[it.key]!! < OTHERS_MAX_VALUE) {
-                others += percentageMap[it.key]!!
-            }
-        }
-
-        return percentageMap.toSortedMap(compareBy<String?> { percentageMap[it] }.thenBy { it })
-            .apply {
-                if (others > 0f) {
-                    put(context.getString(R.string.others), others)
-                }
-            }
-    }
-
-    fun getSpecificNotificationsForGraph(appLabel: String): MutableList<NotificationStatsItem> {
-        val notificationItemList: MutableList<NotificationStatsItem> = mutableListOf()
-
-        val countedNotifications: MutableMap<String, Long> = mutableMapOf()
-
-        notifications
-            .query()
-            .build()
-            .find()
-            .filter { it.packageName.target.name == appLabel || it.packageName.target.pkg == appLabel }
-            .forEach { notification ->
-                val title = if (notification.packageName.target.pkg.contains("com.whatsapp")) {
-                    notification.conversationTitle?.substringBeforeLast("(")
-                        ?: notification.title
-                } else {
-                    notification.title
-                }
-
-                if (title.isNotBlank()) {
-                    if (countedNotifications.containsKey(title) || countedNotifications.any {
-                            it.key.startsWith(
-                                title
-                            )
-                        }) {
-                        countedNotifications[title] = countedNotifications[title]!! + 1
-                    } else {
-                        countedNotifications[title] = 1
-                    }
-                }
-            }
-
-        var total = 0f
-
-        countedNotifications.forEach { total += it.value }
-
-        countedNotifications.toSortedMap(compareBy<String?> { countedNotifications[it] }.thenBy { it })
-            .forEach {
-                notificationItemList.add(
-                    NotificationStatsItem(
-                        it.key,
-                        it.value,
-                        ("%.2f".format((100.0 * it.value / total))).toDoubleOrNull()
-                    )
-                )
-            }
-
-        return notificationItemList
     }
 
     fun deleteNotificationById(id: Long) {
