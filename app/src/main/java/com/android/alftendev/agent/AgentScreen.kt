@@ -136,14 +136,15 @@ fun NotificationAgentScreen(controller: AgentController) {
         if (lastIndex >= 0) listState.scrollToItem(lastIndex)
     }
 
-    Box(
+    Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .imePadding()
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -151,10 +152,7 @@ fun NotificationAgentScreen(controller: AgentController) {
             if (running) item { LoadingReply { cancelled.set(true); running = false } }
         }
         Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .imePadding(),
+            modifier = Modifier.fillMaxWidth(),
             tonalElevation = 3.dp
         ) {
             Row(
