@@ -62,34 +62,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnAttach
-import androidx.core.view.doOnDetach
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
 import com.android.alftendev.composes.utils.Typography
 import com.android.alftendev.utils.MySharedPref
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun ComposeView.bindNotificationAgent(
-    controller: AgentController,
-    onImeHeightChanged: (Int) -> Unit
-) {
+fun ComposeView.bindNotificationAgent(controller: AgentController) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-    val globalLayoutListener = android.view.ViewTreeObserver.OnGlobalLayoutListener {
-        val visibleFrame = android.graphics.Rect()
-        rootView.getWindowVisibleDisplayFrame(visibleFrame)
-        onImeHeightChanged((rootView.height - visibleFrame.bottom).coerceAtLeast(0))
-    }
-    viewTreeObserver.addOnGlobalLayoutListener(globalLayoutListener)
     setContent {
         AgentContentTheme {
             NotificationAgentScreen(controller)
         }
     }
-    doOnAttach { ViewCompat.requestApplyInsets(it) }
-    doOnDetach { viewTreeObserver.removeOnGlobalLayoutListener(globalLayoutListener) }
 }
 
 @Composable
