@@ -45,7 +45,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TopAppBarDefaults
@@ -187,7 +187,7 @@ private fun NotificationHost(
     Scaffold(
         contentWindowInsets = WindowInsets.systemBars,
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     when (tab) {
                         HostTab.HISTORY -> Text(if (title.isBlank()) context.getString(R.string.notification_history) else title)
@@ -231,6 +231,7 @@ private fun NotificationHost(
                         HostTab.SETTINGS -> Unit
                     }
                 },
+                expandedHeight = 48.dp,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
