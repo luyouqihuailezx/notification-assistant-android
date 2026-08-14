@@ -3,7 +3,6 @@ package com.android.alftendev.activities
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,9 +23,6 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -137,28 +133,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         }
     }
 
-    /**
-     * 键盘避让完全交给系统：
-     * Android 10 及以下由窗口自身收缩（adjustResize）完成；
-     * Android 11 起改用系统上报的 WindowInsets，因为 targetSdk 35+ 的强制边到边
-     * 已使 adjustResize 失效，此时窗口不会收缩，只能由 insets 驱动内边距。
-     */
-    private fun setUpKeyboardHandling() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-            return
-        }
-
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
-            insets
-        }
-    }
-
     @SuppressLint("ApplySharedPref")
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
@@ -169,7 +143,6 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         runOnUiThread {
             uiDefaultSettings(this)
             setContentView(R.layout.activity_notification_list)
-            setUpKeyboardHandling()
         }
 
         bottomNavigation = findViewById(R.id.bottomNavigation)
