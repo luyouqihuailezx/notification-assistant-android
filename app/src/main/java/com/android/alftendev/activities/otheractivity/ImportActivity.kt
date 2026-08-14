@@ -1,139 +1,79 @@
 package com.android.alftendev.activities.otheractivity
 
-import android.app.Dialog
-import android.content.Intent
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Bundle
-import android.widget.EditText
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
+import com.android.alftendev.ui.theme.NotificationListenerTheme
 import com.android.alftendev.utils.CustomLog
 import com.android.alftendev.utils.ImportExport
 import com.android.alftendev.utils.ImportExport.copyUriToFile
-import com.android.alftendev.utils.UiUtils
-import com.android.alftendev.utils.UiUtils.showLoadingDialog
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.io.File
 
+@OptIn(ExperimentalMaterial3Api::class)
 class ImportActivity : AppCompatActivity() {
-    companion object {
-        val LOGGER = CustomLog("noti-importer-activity")
-
-        private lateinit var filePickerLauncher: ActivityResultLauncher<Intent>
-        private var zipPassword = ""
-    }
+    private lateinit var picker: ActivityResultLauncher<Intent>
+    private var password = ""
+    private var showError by mutableStateOf<String?>(null)
+    private var working by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_import)
-
-        filePickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                LOGGER.log("received resultCode ${result.resultCode}")
-                if (result.resultCode == RESULT_OK) {
-                    val uri = result.data?.data
-
-                    if (uri == null) {
-                        LOGGER.log("uri is null")
-                        UiUtils.showToast(getString(R.string.file_not_found), this)
-                        return@registerForActivityResult
-                    }
-
-                    val zipFile = copyUriToFile(this, uri)
-
-                    if (zipFile != null) {
-                        if (zipFile.exists()) {
-                            if (zipPassword.isEmpty()) {
-                                UiUtils.showToast(getString(R.string.enter_zip_password), this)
-                                LOGGER.log("Zip password is empty")
-                                return@registerForActivityResult
-                            }
-
-                            LOGGER.log("processing zip")
-                            UiUtils.showToast(getString(R.string.importing_zip), this)
-
-                            var loadingDialog: Dialog? = null
-
-                            runOnUiThread {
-                                loadingDialog = showLoadingDialog(this)
-                            }
-
-                            MyApplication.executor.execute {
-                                val result = ImportExport.importZipDecryptAndPrintStreaming(
-                                    zipFile,
-                                    zipPassword
-                                )
-
-                                runOnUiThread {
-                                    loadingDialog?.dismiss()
-
-                                    if (result.success) {
-                                        UiUtils.showToast(
-                                            getString(R.string.import_completed),
-                                            this
-                                        )
-                                    } else {
-                                        showImportError(result.errorDetails.orEmpty())
-                                    }
-                                }
-                            }
-                        } else {
-                            UiUtils.showToast(getString(R.string.zip_does_not_exist), this)
-                            LOGGER.log(getString(R.string.zip_does_not_exist))
-                        }
-                    } else {
-                        UiUtils.showToast(getString(R.string.zip_file_unavailable), this)
-                        LOGGER.log("zip null")
-                    }
-                } else {
-                    UiUtils.showToast(
-                        getString(R.string.file_selection_failed, result.resultCode),
-                        this
-                    )
-                }
+        picker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode != RESULT_OK) { showError = getString(R.string.file_selection_failed, result.resultCode); return@registerForActivityResult }
+            val uri = result.data?.data ?: run { showError = getString(R.string.file_not_found); return@registerForActivityResult }
+            val zip = copyUriToFile(this, uri)
+            if (zip == null || !zip.exists()) { showError = getString(R.string.zip_file_unavailable); return@registerForActivityResult }
+            working = true
+            MyApplication.executor.execute {
+                val result = try { ImportExport.importZipDecryptAndPrintStreaming(zip, password) }
+                finally { zip.delete() }
+                runOnUiThread { working = false; if (result.success) finish() else showError = result.errorDetails.orEmpty() }
             }
-
-        val etZipPassword = findViewById<EditText>(R.id.etZipPassword)
-        val bSelectZipFile = findViewById<MaterialButton>(R.id.bSelectZipFile)
-
-        bSelectZipFile.setOnClickListener {
-            if (etZipPassword.text.isNullOrEmpty()) {
-                UiUtils.showToast(getString(R.string.enter_zip_password), this)
-                return@setOnClickListener
-            }
-
-            zipPassword = etZipPassword.text.toString()
-
-            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                type = "application/zip"
-                addCategory(Intent.CATEGORY_OPENABLE)
-            }
-            filePickerLauncher.launch(
-                Intent.createChooser(
-                    intent,
-                    getString(R.string.select_the_zip)
-                )
-            )
         }
+        setContent { NotificationListenerTheme { ImportScreen(::selectFile, working, showError) { showError = null } } }
     }
 
-    private fun showImportError(details: String) {
-        LOGGER.log("Import failed: $details")
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.import_failed))
-            .setMessage(details.ifBlank { getString(R.string.operation_failed) })
-            .setPositiveButton(android.R.string.ok, null)
-            .setNeutralButton(R.string.copy_error) { _, _ ->
-                val clipboard = getSystemService(ClipboardManager::class.java)
-                clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.error_details), details))
-                UiUtils.showToast(getString(R.string.copy_string), this)
-            }
-            .show()
+    private fun selectFile(value: String): Unit {
+        if (value.isBlank()) { showError = getString(R.string.enter_zip_password); return }
+        password = value
+        picker.launch(Intent.createChooser(Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "application/zip"; addCategory(Intent.CATEGORY_OPENABLE)
+        }, getString(R.string.select_the_zip)))
     }
+
+    @Composable private fun ImportScreen(onSelect: (String) -> Unit, loading: Boolean, error: String?, clear: () -> Unit) {
+        var value by remember { mutableStateOf("") }
+        Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.import_string)) }) }) { padding ->
+            Column(Modifier.padding(padding).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(stringResource(R.string.import_notification_database_password_generated_during_export_required))
+                OutlinedTextField(value, { value = it }, label = { Text(stringResource(R.string.zip_password)) }, visualTransformation = PasswordVisualTransformation(), singleLine = true, modifier = Modifier.fillMaxWidth())
+                Button(onClick = { onSelect(value) }, enabled = !loading, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.import_the_zip)) }
+                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
+        }
+        ErrorDialog(error, clear)
+    }
+
+    @Composable private fun ErrorDialog(details: String?, clear: () -> Unit) {
+        if (details == null) return
+        AlertDialog(onDismissRequest = clear, title = { Text(stringResource(R.string.import_failed)) }, text = { Text(details.ifBlank { stringResource(R.string.operation_failed) }) },
+            confirmButton = { TextButton(onClick = clear) { Text(stringResource(android.R.string.ok)) } },
+            dismissButton = { TextButton(onClick = { copy(details); clear() }) { Text(stringResource(R.string.copy_error)) } })
+    }
+    private fun copy(details: String) { getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(getString(R.string.error_details), details)) }
+    companion object { val LOGGER = CustomLog("noti-importer-activity") }
 }
