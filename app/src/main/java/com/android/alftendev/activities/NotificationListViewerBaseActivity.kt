@@ -387,23 +387,20 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         }
         controller.observe { refreshAgentActionBar() }
         refreshAgentActionBar()
-        agentContainer.bindNotificationAgent(controller) { imeVisible ->
-            bottomNavigation.post { updateAgentKeyboardLayout(imeVisible) }
+        agentContainer.bindNotificationAgent(controller) { imeHeight ->
+            bottomNavigation.post { updateAgentKeyboardLayout(imeHeight) }
         }
     }
 
-    private fun updateAgentKeyboardLayout(imeVisible: Boolean) {
+    private fun updateAgentKeyboardLayout(imeHeight: Int) {
         if (!isAgentVisible) return
 
-        val bottomNavigationHeight = bottomNavigation.height.toFloat()
-        val translation = if (imeVisible) bottomNavigationHeight else 0f
-        agentContainer.translationY = translation
-        bottomNavigation.translationY = translation
+        val shouldHideNavigation = imeHeight > bottomNavigation.height
+        bottomNavigation.visibility = if (shouldHideNavigation) View.GONE else View.VISIBLE
     }
 
     private fun resetAgentKeyboardLayout() {
-        agentContainer.translationY = 0f
-        bottomNavigation.translationY = 0f
+        bottomNavigation.visibility = View.VISIBLE
     }
 
     private fun showAgentActionBar() {
