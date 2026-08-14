@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -81,6 +82,7 @@ import com.android.alftendev.utils.MySharedPref.getIsRecordNotificationsEnabled
 import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
 import com.android.alftendev.utils.PermissionUtils.isNotificationServiceEnabled
 import com.android.alftendev.utils.Utils
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -92,6 +94,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(com.android.alftendev.utils.UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         askAuth(this)
         setContent {
             NotificationListenerTheme {
@@ -280,10 +283,19 @@ private fun NotificationList(
 @Composable
 private fun NotificationRow(notification: Notifications, isSelected: Boolean, selecting: Boolean, onOpen: (Notifications) -> Unit, onToggle: (Long) -> Unit, onLongPress: (Long) -> Unit) {
     val context = LocalContext.current
-    val parsed = remember(notification.entityId) { getParsedNoti(notification.title, notification.text, notification.packageName.target.pkg, context) }
+    val parsed = remember(notification.entityId) {
+        getParsedNoti(notification.title, notification.text, notification.packageName.target.pkg, context)
+    }
+    val iconDrawable = remember(notification.entityId) { parsed.icon.loadDrawable(context) }
     Card(Modifier.fillMaxWidth().combinedClickable(onClick = { if (selecting) onToggle(notification.entityId) else onOpen(notification) }, onLongClick = { onLongPress(notification.entityId) })) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (selecting) Checkbox(isSelected, { onToggle(notification.entityId) })
+            Image(
+                painter = rememberDrawablePainter(iconDrawable),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(parsed.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(parsed.text, maxLines = 2, overflow = TextOverflow.Ellipsis)

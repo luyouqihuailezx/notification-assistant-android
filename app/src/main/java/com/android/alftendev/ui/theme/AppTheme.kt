@@ -1,17 +1,12 @@
 package com.android.alftendev.ui.theme
 
-import android.app.Activity
-import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
-import androidx.core.view.WindowCompat
 import com.android.alftendev.R
 import com.android.alftendev.composes.utils.Typography
 import com.android.alftendev.utils.MySharedPref
@@ -47,15 +42,6 @@ fun NotificationListenerTheme(content: @Composable () -> Unit) {
             onSurface = colorResource(R.color.text_color_black),
             surfaceVariant = colorResource(R.color.background_light_cardview)
         )
-    }
-    val view = LocalView.current
-    SideEffect {
-        val activity = view.context as? Activity ?: return@SideEffect
-        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
-        activity.window.statusBarColor = AndroidColor.TRANSPARENT
-        activity.window.navigationBarColor = AndroidColor.TRANSPARENT
-        WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = !darkTheme
-        WindowCompat.getInsetsController(activity.window, view).isAppearanceLightNavigationBars = !darkTheme
     }
     MaterialTheme(colorScheme = scheme, typography = Typography, content = content)
 }
