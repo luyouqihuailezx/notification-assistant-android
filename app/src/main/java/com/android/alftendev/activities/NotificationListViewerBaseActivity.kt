@@ -1,7 +1,11 @@
 package com.android.alftendev.activities
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.graphics.drawable.ColorDrawable
@@ -48,11 +52,13 @@ import com.android.alftendev.utils.Utils
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     NotificationsAdapter.OnSelectionChangeListener {
     private companion object {
         const val STATE_SELECTED_TAB = "selected_tab"
+        const val SEARCH_DEBOUNCE_MS = 300L
     }
 
     open lateinit var recycleView: RecyclerView
@@ -63,11 +69,14 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private lateinit var notificationHistoryContent: LinearLayout
     private lateinit var settingsContainer: FrameLayout
     private lateinit var agentContainer: ComposeView
-    private lateinit var agentController: AgentController
+    private var agentController: AgentController? = null
     private lateinit var agentActionBarView: View
     private lateinit var agentSessionTitle: TextView
     private var agentSessionPopup: PopupWindow? = null
     private lateinit var swipeRefresh: SwipeRefreshLayout
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val loadGeneration = AtomicInteger(0)
+    private var pendingSearch: Runnable? = null
     private var isSettingsVisible = false
     private var isAgentVisible = false
 
@@ -94,6 +103,36 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         }
     }
 
+    private fun loadNotifications(load: () -> List<Notifications>, showRefreshing: Boolean = false) {
+        val generation = loadGeneration.incrementAndGet()
+        if (showRefreshing) swipeRefresh.isRefreshing = true
+        MyApplication.executor.execute {
+            runCatching(load)
+                .onSuccess { notifications ->
+                    if (generation == loadGeneration.get()) refreshList(notifications)
+                }
+                .onFailure { throwable ->
+                    if (generation == loadGeneration.get()) showLoadError(throwable)
+                }
+            if (showRefreshing) runOnUiThread { swipeRefresh.isRefreshing = false }
+        }
+    }
+
+    private fun showLoadError(throwable: Throwable) {
+        val details = throwable.stackTraceToString()
+        runOnUiThread {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("通知加载失败")
+                .setMessage(throwable.message ?: throwable.javaClass.name)
+                .setPositiveButton("复制完整错误信息") { _, _ ->
+                    (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager)
+                        .setPrimaryClip(ClipData.newPlainText("通知加载错误", details))
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+
     @SuppressLint("ApplySharedPref")
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
@@ -110,22 +149,11 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         notificationHistoryContent = findViewById(R.id.notificationHistoryContent)
         settingsContainer = findViewById(R.id.settingsContainer)
         agentContainer = findViewById(R.id.agentContainer)
-        agentController = AgentController(this)
         agentActionBarView = layoutInflater.inflate(R.layout.actionbar_agent, null)
         agentSessionTitle = agentActionBarView.findViewById(R.id.agentSessionTitle)
-        agentSessionTitle.setOnClickListener { showAgentSessionMenu(it) }
-        agentActionBarView.findViewById<View>(R.id.agentNewSession).setOnClickListener {
-            agentController.createSession()
-        }
-        agentController.observe { refreshAgentActionBar() }
-        refreshAgentActionBar()
-        agentContainer.bindNotificationAgent(agentController)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
-            MyApplication.executor.execute {
-                refreshList(getNotifications())
-                runOnUiThread { swipeRefresh.isRefreshing = false }
-            }
+            loadNotifications(::getNotifications, showRefreshing = true)
         }
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -150,7 +178,9 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         etSearch = findViewById(R.id.etSearch)
         recycleView = findViewById(R.id.lvAll)
         linearLayoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        linearLayoutManager.initialPrefetchItemCount = 4
         recycleView.layoutManager = linearLayoutManager
+        recycleView.setItemViewCacheSize(8)
 
         llSelectionBar = findViewById(R.id.llSelectionBar)
         cbSelectAll = findViewById(R.id.cbSelectAll)
@@ -235,7 +265,12 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
                 Unit
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                MyApplication.executor.execute { refreshList(getNotificationsBySearch(s.toString())) }
+                pendingSearch?.let(mainHandler::removeCallbacks)
+                val filter = s.toString()
+                pendingSearch = Runnable {
+                    loadNotifications(load = { getNotificationsBySearch(filter) })
+                }
+                mainHandler.postDelayed(pendingSearch!!, SEARCH_DEBOUNCE_MS)
             }
         })
 
@@ -276,10 +311,11 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        MyApplication.executor.execute { refreshList(getNotifications()) }
+        loadNotifications(::getNotifications)
     }
 
     override fun onDestroy() {
+        pendingSearch?.let(mainHandler::removeCallbacks)
         super.onDestroy()
         if (javaClass.simpleName == "AllNotificationsActivity") {
             authSuccess.set(false)
@@ -332,7 +368,21 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         agentContainer.visibility = View.VISIBLE
         isSettingsVisible = false
         isAgentVisible = true
+        ensureAgentInitialized()
         showAgentActionBar()
+    }
+
+    private fun ensureAgentInitialized() {
+        if (agentController != null) return
+        val controller = AgentController(this)
+        agentController = controller
+        agentSessionTitle.setOnClickListener { showAgentSessionMenu(it) }
+        agentActionBarView.findViewById<View>(R.id.agentNewSession).setOnClickListener {
+            controller.createSession()
+        }
+        controller.observe { refreshAgentActionBar() }
+        refreshAgentActionBar()
+        agentContainer.bindNotificationAgent(controller)
     }
 
     private fun showAgentActionBar() {
@@ -359,18 +409,19 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     }
 
     private fun refreshAgentActionBar() {
-        if (!::agentSessionTitle.isInitialized) return
-        agentSessionTitle.text = getString(R.string.agent_session_title, agentController.active.title)
+        val controller = agentController ?: return
+        agentSessionTitle.text = getString(R.string.agent_session_title, controller.active.title)
     }
 
     private fun showAgentSessionMenu(anchor: View) {
+        val controller = agentController ?: return
         agentSessionPopup?.dismiss()
-        val sessions = agentController.sessions
+        val sessions = controller.sessions
         val listView = ListView(this).apply {
-            adapter = AgentSessionMenuAdapter(this@NotificationListViewerBaseActivity, sessions, agentController.activeId)
+            adapter = AgentSessionMenuAdapter(this@NotificationListViewerBaseActivity, sessions, controller.activeId)
             divider = null
             setOnItemClickListener { _, _, position, _ ->
-                agentController.switchTo(sessions[position].id)
+                controller.switchTo(sessions[position].id)
                 agentSessionPopup?.dismiss()
             }
             setOnItemLongClickListener { _, _, position, _ ->
@@ -399,7 +450,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.agent_delete_session)
             .setMessage(getString(R.string.agent_delete_session_confirm, title))
-            .setPositiveButton(R.string.confirm) { _, _ -> agentController.deleteSession(id) }
+            .setPositiveButton(R.string.confirm) { _, _ -> agentController?.deleteSession(id) }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
