@@ -331,6 +331,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (isSettingsVisible) return
 
         hideAgentActionBar()
+        bottomNavigation.visibility = View.VISIBLE
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.settings)
         notificationHistoryContent.visibility = View.GONE
@@ -350,6 +351,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
         if (!isSettingsVisible && !isAgentVisible) return
 
         hideAgentActionBar()
+        bottomNavigation.visibility = View.VISIBLE
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         supportActionBar?.title = getString(R.string.notification_history)
         settingsContainer.visibility = View.GONE
@@ -362,7 +364,8 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity(),
     private fun showAgent() {
         if (isAgentVisible) return
 
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        bottomNavigation.visibility = View.GONE
         notificationHistoryContent.visibility = View.GONE
         settingsContainer.visibility = View.GONE
         agentContainer.visibility = View.VISIBLE
