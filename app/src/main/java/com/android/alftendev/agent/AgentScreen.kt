@@ -14,15 +14,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,14 +48,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
@@ -70,6 +63,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnAttach
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
 import com.android.alftendev.composes.utils.Typography
@@ -77,8 +73,28 @@ import com.android.alftendev.utils.MySharedPref
 import java.util.concurrent.atomic.AtomicBoolean
 
 fun ComposeView.bindNotificationAgent(controller: AgentController) {
+    val imeOverlapPx = mutableIntStateOf(0)
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-    setContent { AgentContentTheme { NotificationAgentScreen(controller) } }
+    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+        val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+        val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+        val location = IntArray(2)
+        view.getLocationInWindow(location)
+        val viewBottom = location[1] + view.height
+        val imeTop = view.rootView.height - imeBottom
+        imeOverlapPx.intValue = if (imeVisible) {
+            (viewBottom - imeTop).coerceAtLeast(0)
+        } else {
+            0
+        }
+        insets
+    }
+    setContent {
+        AgentContentTheme {
+            NotificationAgentScreen(controller, imeOverlapPx.intValue)
+        }
+    }
+    doOnAttach { ViewCompat.requestApplyInsets(it) }
 }
 
 @Composable
@@ -117,22 +133,17 @@ private fun AgentContentTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun NotificationAgentScreen(controller: AgentController) {
+private fun NotificationAgentScreen(controller: AgentController, imeOverlapPx: Int) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val view = LocalView.current
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
-    var screenBounds by remember { mutableStateOf(Rect.Zero) }
     val cancelled = remember { AtomicBoolean(false) }
     val listState = rememberLazyListState()
-    val imeBottom = WindowInsets.ime.getBottom(density)
-    val imeTop = view.rootView.height - imeBottom
-    val imeOverlap = if (imeBottom > 0) (screenBounds.bottom - imeTop).coerceAtLeast(0f) else 0f
-    val imeOverlapDp = with(density) { imeOverlap.toDp() }
+    val imeOverlapDp = with(density) { imeOverlapPx.toDp() }
     DisposableEffect(controller) {
         val unsubscribe = controller.observe { revision++ }
         onDispose { unsubscribe() }
@@ -195,7 +206,6 @@ private fun NotificationAgentScreen(controller: AgentController) {
     Column(
         Modifier
             .fillMaxSize()
-            .onGloballyPositioned { screenBounds = it.boundsInWindow() }
             .background(MaterialTheme.colorScheme.background)
             .padding(bottom = imeOverlapDp)
     ) {
