@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -190,11 +191,15 @@ class BlackWhiteListActivity : AppCompatActivity() {
                 }
                 OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), label = { Text(context.getString(R.string.search_apps)) }, singleLine = true)
                 Box(Modifier.fillMaxSize()) {
-                    LazyVerticalGrid(GridCells.Adaptive(88.dp), state = gridState, contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(filtered, key = { it.pkg }) { app ->
+                    LazyVerticalGrid(GridCells.Adaptive(112.dp), state = gridState, contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        filtered.forEachIndexed { index, app ->
                             val section = sectionFor(app)
-                            Column {
-                                if (filtered.indexOf(app) == filtered.indexOfFirst { sectionFor(it) == section }) Text(section, Modifier.padding(top = 6.dp), style = MaterialTheme.typography.labelLarge)
+                            if (index == 0 || sectionFor(filtered[index - 1]) != section) {
+                                item(span = { GridItemSpan(maxLineSpan) }, key = "header_$section") {
+                                    Text(section, Modifier.padding(top = 8.dp, bottom = 2.dp), style = MaterialTheme.typography.labelLarge)
+                                }
+                            }
+                            item(key = app.pkg) {
                                 AppCard(app, displayName(app), { update(app, !app.isWhiteList) })
                             }
                         }

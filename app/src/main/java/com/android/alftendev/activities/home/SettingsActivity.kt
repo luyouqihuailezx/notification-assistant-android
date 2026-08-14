@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
@@ -45,6 +46,7 @@ import com.android.alftendev.utils.AuthUtils.askAuth
 import com.android.alftendev.utils.ImportExport
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.MySharedPref.RECORD_NOTIFICATIONS_ENABLED
+import com.android.alftendev.utils.PermissionUtils
 import com.android.alftendev.utils.UiUtils
 import java.io.File
 
@@ -119,17 +121,29 @@ internal fun NotificationSettingsContent(showNavigation: Boolean = true) {
                         }
                     )
                 }
-                item { ActionItem(R.string.onboarding, R.string.onboarding) { activity.startActivity(Intent(activity, OnboardingActivity::class.java)) } }
-                item { ActionItem(R.string.permissions) { activity.startActivity(Intent(activity, PermissionsActivity::class.java)) } }
+                item { ActionItem(R.string.onboarding) { activity.startActivity(Intent(activity, OnboardingActivity::class.java)) } }
+                item { SettingsCategory(R.string.permissions) }
+                item {
+                    ActionItem(
+                        R.string.notification_listener_access,
+                        permissionSummary(activity, PermissionUtils.isNotificationServiceEnabled(activity))
+                    ) { PermissionUtils.openNotificationListenerSettings(activity) }
+                }
+                item {
+                    ActionItem(
+                        R.string.app_list_access,
+                        permissionSummary(activity, PermissionUtils.canReadInstalledApps(activity))
+                    ) { PermissionUtils.openAppDetailsSettings(activity) }
+                }
                 item { SettingsCategory(R.string.notification_collection_apps) }
-                item { ActionItem(R.string.notification_collection_apps, R.string.notification_collection_apps_summary) { activity.startActivity(Intent(activity, BlackWhiteListActivity::class.java)) } }
+                item { ActionItem(R.string.notification_collection_apps, stringResource(R.string.notification_collection_apps_summary)) { activity.startActivity(Intent(activity, BlackWhiteListActivity::class.java)) } }
                 item { SettingsCategory(R.string.export_import) }
-                item { ActionItem(R.string.export, R.string.exports_the_notification_database_to_a_password_encrypted_file) { exportDialog = true } }
-                item { ActionItem(R.string.import_string, R.string.import_notification_database_password_generated_during_export_required) { activity.startActivity(Intent(activity, ImportActivity::class.java)) } }
+                item { ActionItem(R.string.export, stringResource(R.string.exports_the_notification_database_to_a_password_encrypted_file)) { exportDialog = true } }
+                item { ActionItem(R.string.import_string, stringResource(R.string.import_notification_database_password_generated_during_export_required)) { activity.startActivity(Intent(activity, ImportActivity::class.java)) } }
                 item { SettingsCategory(R.string.notification_agent) }
-                item { ActionItem(R.string.agent_service_settings, R.string.agent_service_settings_summary) { activity.startActivity(Intent(activity, AgentSettingsActivity::class.java)) } }
+                item { ActionItem(R.string.agent_service_settings, stringResource(R.string.agent_service_settings_summary)) { activity.startActivity(Intent(activity, AgentSettingsActivity::class.java)) } }
                 item { SettingsCategory(R.string.info) }
-                item { ActionItem(R.string.about, R.string.about_summary) { activity.startActivity(Intent(activity, AboutActivity::class.java)) } }
+                item { ActionItem(R.string.about, stringResource(R.string.about_summary)) { activity.startActivity(Intent(activity, AboutActivity::class.java)) } }
             }
         }
     }
@@ -140,13 +154,16 @@ internal fun NotificationSettingsContent(showNavigation: Boolean = true) {
     private fun SettingsCategory(title: Int) { Text(stringResource(title), Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp)) }
 
     @Composable
-    private fun ActionItem(title: Int, summary: Int? = null, onClick: () -> Unit) {
+    private fun ActionItem(title: Int, summary: String? = null, onClick: () -> Unit) {
         ListItem(
+            modifier = Modifier.clickable(onClick = onClick),
             headlineContent = { Text(stringResource(title)) },
-            supportingContent = summary?.let { { Text(stringResource(it)) } },
-            trailingContent = { TextButton(onClick) { Text(stringResource(R.string.more_info)) } }
+            supportingContent = summary?.let { { Text(it) } }
         )
     }
+
+    private fun permissionSummary(activity: AppCompatActivity, granted: Boolean): String =
+        "${if (granted) activity.getString(R.string.enabled) else activity.getString(R.string.disabled)} · ${activity.getString(R.string.go_to_settings)}"
 
     @Composable
     private fun HomeSettingsNavigation(activity: AppCompatActivity) {
