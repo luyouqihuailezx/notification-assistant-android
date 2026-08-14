@@ -1,25 +1,14 @@
 <resources>
     <string name="app_name">通知助手</string>
-    <string name="show_chat">显示为聊天</string>
-    <string name="blacklist_auto">屏蔽系统应用</string>
     <string name="yes">是</string>
     <string name="no">否</string>
     <string name="back">返回</string>
-    <string name="blacklist_reset_confirm">确定要重置黑名单吗？</string>
-    <string name="whitelist_reset_confirm">确定要重置白名单吗？</string>
 
     <string name="isAutoBlacklistOn" translatable="false">isAutoBlacklistOn</string>
     <string name="isNotificationEnabled" translatable="false">isNotificationEnabled</string>
 
     <string name="all_notification">通知历史</string>
     <string name="deleted_notification">已删除通知</string>
-    <string name="advanced_search">高级搜索</string>
-    <string name="chat">聊天</string>
-    <string name="group_chat">群聊</string>
-    <string name="isChatActivity">聊天应用</string>
-    <string name="isChatApp">聊天应用</string>
-
-    <string name="title_text">标题/正文</string>
     <string name="deleted">已删除</string>
     <string name="search">搜索通知</string>
 
@@ -71,13 +60,9 @@
     <string name="notification_count">通知数量：</string>
     <string name="version">版本</string>
     <string name="rating">评价应用</string>
-    <string name="open_blacklist">打开黑名单</string>
     <string name="notifications">通知</string>
     <string name="theme">主题</string>
     <string name="info">关于</string>
-    <string name="info_specific_graph">关于（测试版）</string>
-    <string name="chat_title">聊天应用</string>
-    <string name="chat_summary">标记为聊天的应用会显示在应用的“聊天”部分</string>
     <string name="notification_summary">当应用发现设备收到的通知被清除时，会发送提醒；可能出现误报。</string>
 
     <string name="defaultSwitchValue">所有应用</string>
@@ -93,7 +78,6 @@
     <string name="infoText">信息文本：</string>
     <string name="peopleList">联系人列表：</string>
     <string name="isDeleted">已删除：</string>
-    <string name="graph">图表（测试版）</string>
 
     <string name="authErr">认证错误</string>
     <string name="authFail">认证失败</string>

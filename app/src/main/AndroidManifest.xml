@@ -67,11 +67,6 @@
             android:label="@string/permissions"
             android:screenOrientation="behind" />
         <activity
-            android:name=".activities.adaptersactivity.IsChatActivity"
-            android:exported="false"
-            android:label="@string/isChatActivity"
-            android:screenOrientation="behind" />
-        <activity
             android:name=".activities.home.SettingsActivity"
             android:exported="false"
             android:label="@string/settings"
@@ -95,26 +90,9 @@
             android:label="@string/notification_collection_apps"
             android:screenOrientation="behind" />
         <activity
-            android:name=".activities.home.SearchActivity"
-            android:exported="false"
-            android:label="@string/advanced_search"
-            android:screenOrientation="behind" />
-        <activity
             android:name=".activities.home.AllNotificationsActivity"
             android:exported="false"
             android:label="@string/all_notification"
-            android:screenOrientation="behind"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".activities.home.ChatsActivity"
-            android:exported="false"
-            android:label="@string/chat"
-            android:screenOrientation="behind"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".activities.home.GroupChatActivity"
-            android:exported="false"
-            android:label="@string/group_chat"
             android:screenOrientation="behind"
             android:windowSoftInputMode="adjustResize" />
         <activity
@@ -123,16 +101,6 @@
             android:label="@string/deleted_notification"
             android:screenOrientation="behind"
             android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".activities.adaptersactivity.ListSearchActivity"
-            android:exported="false"
-            android:label="@string/search"
-            android:screenOrientation="behind" />
-        <activity
-            android:name=".jetpackactivities.ChatUIActivity"
-            android:exported="false"
-            android:label="@string/chat"
-            android:screenOrientation="behind" />
         <activity
             android:name=".activities.MainActivity"
             android:exported="true"
