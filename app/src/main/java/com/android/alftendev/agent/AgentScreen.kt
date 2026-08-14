@@ -51,9 +51,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
@@ -114,13 +119,20 @@ private fun AgentContentTheme(content: @Composable () -> Unit) {
 @Composable
 private fun NotificationAgentScreen(controller: AgentController) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val view = LocalView.current
     val service = remember { NotificationAgentService(AgentProviderSettings(context)) }
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
+    var screenBounds by remember { mutableStateOf(Rect.Zero) }
     val cancelled = remember { AtomicBoolean(false) }
     val listState = rememberLazyListState()
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    val imeTop = view.rootView.height - imeBottom
+    val imeOverlap = if (imeBottom > 0) (screenBounds.bottom - imeTop).coerceAtLeast(0f) else 0f
+    val imeOverlapDp = with(density) { imeOverlap.toDp() }
     DisposableEffect(controller) {
         val unsubscribe = controller.observe { revision++ }
         onDispose { unsubscribe() }
@@ -183,7 +195,9 @@ private fun NotificationAgentScreen(controller: AgentController) {
     Column(
         Modifier
             .fillMaxSize()
+            .onGloballyPositioned { screenBounds = it.boundsInWindow() }
             .background(MaterialTheme.colorScheme.background)
+            .padding(bottom = imeOverlapDp)
     ) {
         LazyColumn(
             state = listState,
@@ -197,8 +211,7 @@ private fun NotificationAgentScreen(controller: AgentController) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
-                .windowInsetsPadding(WindowInsets.ime),
+                .padding(8.dp),
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(
