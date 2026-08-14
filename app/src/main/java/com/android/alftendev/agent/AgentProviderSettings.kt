@@ -49,7 +49,7 @@ class AgentProviderSettings(context: Context) {
 
     companion object {
         const val DEFAULT_BASE_URL = "https://api.deepseek.com"
-        const val DEFAULT_MODEL = "deepseek-chat"
+        const val DEFAULT_MODEL = "deepseek-v4-flash"
         const val DEEPSEEK_API_KEYS_URL = "https://platform.deepseek.com/api_keys"
         private const val PREFERENCES = "notification_agent_settings_v2"
         private const val SECRET_PREFERENCES = "notification_agent_secrets_v2"
