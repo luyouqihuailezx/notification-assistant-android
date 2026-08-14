@@ -14,7 +14,6 @@
         <item name="android:textColor">@color/text_color_black</item>
 
         <item name="backgroundColor">@color/background</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
     <style name="Theme.light" parent="Theme.Material3.DayNight">
@@ -31,7 +30,6 @@
         <item name="android:textColor">@color/text_color_black</item>
 
         <item name="backgroundColor">@color/background</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
     <style name="Theme.dark" parent="Theme.Material3.DayNight">
@@ -48,7 +46,6 @@
         <item name="android:textColor">@color/text_color_white</item>
 
         <item name="backgroundColor">@color/background_dark</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
     <style name="Theme.Simplenotlistener.AppWidgetContainerParent" parent="@android:style/Theme.DeviceDefault">
