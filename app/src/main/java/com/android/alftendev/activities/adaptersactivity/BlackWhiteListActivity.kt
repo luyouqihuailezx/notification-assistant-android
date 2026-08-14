@@ -100,6 +100,10 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         val normalized = normalize(query)
         apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }.sortedWith(comparator)
     }
+    val recommendedApps = remember(apps, query, selectionRevision) {
+        if (query.isNotBlank()) emptyList() else apps.filter { it.pkg in RECOMMENDED_APP_PACKAGES || name(it) in RECOMMENDED_APP_NAMES }
+            .sortedBy { recommendedOrder(it) }
+    }
     val sections = remember(filtered) { filtered.map(::section).distinct() }
 
     fun refreshApps() {
@@ -179,6 +183,26 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                 contentPadding = PaddingValues(start = 8.dp, end = 36.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                if (recommendedApps.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }, key = "recommended_header") {
+                        Text(
+                            stringResource(R.string.recommended_apps),
+                            Modifier.padding(top = 8.dp, bottom = 2.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                    recommendedApps.forEach { app ->
+                        item(key = "recommended_${app.pkg}") {
+                            AppCard(
+                                app = app,
+                                name = name(app),
+                                isSelected = app.isWhiteList,
+                                onToggle = { update(app, !app.isWhiteList) }
+                            )
+                        }
+                    }
+                }
                 filtered.forEachIndexed { index, app ->
                     val currentSection = section(app)
                     if (index == 0 || section(filtered[index - 1]) != currentSection) {
@@ -198,7 +222,8 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                 AlphabetIndex(sections, Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp)) { target ->
                     val appIndex = filtered.indexOfFirst { section(it) == target }
                     if (appIndex >= 0) {
-                        val gridIndex = appIndex + filtered.take(appIndex).map(::section).distinct().size
+                        val recommendedOffset = if (recommendedApps.isEmpty()) 0 else recommendedApps.size + 1
+                        val gridIndex = recommendedOffset + appIndex + filtered.take(appIndex).map(::section).distinct().size
                         scope.launch { gridState.scrollToItem(gridIndex) }
                     }
                 }
@@ -206,6 +231,25 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
             if (loading) CircularProgressIndicator(Modifier.align(Alignment.Center))
         }
     }
+}
+
+private val RECOMMENDED_APP_PACKAGES = listOf(
+    "com.tencent.mm",
+    "com.tencent.mobileqq",
+    "com.google.android.apps.messaging",
+    "com.android.mms",
+    "com.eg.android.AlipayGphone",
+    "com.tencent.wework",
+    "com.alibaba.android.rimet",
+    "com.ss.android.lark"
+)
+
+private val RECOMMENDED_APP_NAMES = setOf("微信", "QQ", "信息", "支付宝", "企业微信", "钉钉", "飞书")
+
+private fun recommendedOrder(app: PackageName): Int {
+    val packageIndex = RECOMMENDED_APP_PACKAGES.indexOf(app.pkg)
+    if (packageIndex >= 0) return packageIndex
+    return RECOMMENDED_APP_NAMES.indexOf(app.name).takeIf { it >= 0 } ?: Int.MAX_VALUE
 }
 
 @OptIn(ExperimentalFoundationApi::class)

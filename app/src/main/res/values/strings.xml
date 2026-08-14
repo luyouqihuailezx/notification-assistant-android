@@ -201,6 +201,7 @@
     <string name="notification_collection_apps">通知收集应用列表</string>
     <string name="notification_collection_apps_summary">手动选择允许通知助手收集通知的应用。</string>
     <string name="added_apps">已添加应用</string>
+    <string name="recommended_apps">推荐应用</string>
     <string name="remove_added_app">移除已添加应用</string>
     <string name="about">关于</string>
     <string name="about_summary">版本、隐私政策、开源许可证等。</string>
