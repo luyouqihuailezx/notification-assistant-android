@@ -88,7 +88,7 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var actionsExpanded by remember { mutableStateOf(false) }
-    var appPendingRemoval by remember { mutableStateOf<PackageName?>(null) }
+    var removalMenuFor by remember { mutableStateOf<String?>(null) }
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
 
@@ -152,7 +152,15 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         if (selected.isNotEmpty()) {
             Text(stringResource(R.string.added_apps), Modifier.padding(horizontal = 8.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
             Row(Modifier.fillMaxWidth().height(56.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                selected.forEach { app -> SelectedAppIcon(app) { appPendingRemoval = app } }
+                selected.forEach { app ->
+                    SelectedAppIcon(
+                        app = app,
+                        menuExpanded = removalMenuFor == app.pkg,
+                        onOpenMenu = { removalMenuFor = app.pkg },
+                        onDismissMenu = { removalMenuFor = null },
+                        onRemove = { update(app, false); removalMenuFor = null }
+                    )
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -176,7 +184,14 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                     if (index == 0 || section(filtered[index - 1]) != currentSection) {
                         item(span = { GridItemSpan(maxLineSpan) }, key = "header_$currentSection") { Text(currentSection, Modifier.padding(top = 8.dp, bottom = 2.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge) }
                     }
-                    item(key = app.pkg) { AppCard(app, name(app)) { update(app, !app.isWhiteList) } }
+                    item(key = app.pkg) {
+                        AppCard(
+                            app = app,
+                            name = name(app),
+                            isSelected = app.isWhiteList,
+                            onToggle = { update(app, !app.isWhiteList) }
+                        )
+                    }
                 }
             }
             if (sections.isNotEmpty()) {
@@ -191,39 +206,35 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
             if (loading) CircularProgressIndicator(Modifier.align(Alignment.Center))
         }
     }
-    appPendingRemoval?.let { app ->
-        AlertDialog(
-            onDismissRequest = { appPendingRemoval = null },
-            title = { Text(stringResource(R.string.remove_added_app)) },
-            text = { Text(name(app)) },
-            confirmButton = {
-                TextButton(onClick = { update(app, false); appPendingRemoval = null }) {
-                    Text(stringResource(R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { appPendingRemoval = null }) { Text(stringResource(R.string.cancel)) }
-            }
-        )
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SelectedAppIcon(app: PackageName, onRemove: () -> Unit) {
-    val context = LocalContext.current
-    Box(Modifier.size(48.dp).combinedClickable(onClick = onRemove, onLongClick = onRemove), contentAlignment = Alignment.Center) {
+private fun SelectedAppIcon(
+    app: PackageName,
+    menuExpanded: Boolean,
+    onOpenMenu: () -> Unit,
+    onDismissMenu: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Box(Modifier.size(48.dp).combinedClickable(onClick = onOpenMenu, onLongClick = onOpenMenu), contentAlignment = Alignment.Center) {
         LazyAppIcon(app.pkg, Modifier.size(40.dp), app.pkg)
+        DropdownMenu(expanded = menuExpanded, onDismissRequest = onDismissMenu) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.remove_added_app)) },
+                onClick = onRemove
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AppCard(app: PackageName, name: String, onToggle: () -> Unit) {
+private fun AppCard(app: PackageName, name: String, isSelected: Boolean, onToggle: () -> Unit) {
     val context = LocalContext.current
-    Card(Modifier.fillMaxWidth().height(104.dp).combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (app.isWhiteList) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(Modifier.fillMaxWidth().height(104.dp).combinedClickable(onClick = onToggle, onLongClick = onToggle), colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
         Box(Modifier.fillMaxSize()) {
-            Checkbox(app.isWhiteList, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
+            Checkbox(isSelected, onCheckedChange = { onToggle() }, Modifier.align(Alignment.TopStart))
             Column(Modifier.fillMaxSize().padding(top = 8.dp, start = 4.dp, end = 4.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
                     LazyAppIcon(app.pkg, Modifier.size(38.dp), app.pkg)
