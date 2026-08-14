@@ -13,7 +13,9 @@ import com.android.alftendev.R
 import com.android.alftendev.activities.home.AllNotificationsActivity
 import com.android.alftendev.activities.onboarding.OnboardingActivity
 import com.android.alftendev.activities.onboarding.OnboardingSettings
+import com.android.alftendev.activities.migration.LegacyDbMigrationActivity
 import com.android.alftendev.utils.AuthUtils.haveToAskAuth
+import com.android.alftendev.utils.LegacyDbMigrationSettings
 import com.android.alftendev.utils.MySharedPref
 import com.android.alftendev.utils.PermissionUtils.askNotificationServicePermission
 import com.android.alftendev.utils.PermissionUtils.isNotificationServiceEnabled
@@ -29,6 +31,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(UiUtils.themeValueToTheme(this, MySharedPref.getThemeOptions()))
         super.onCreate(savedInstanceState)
+
+        if (LegacyDbMigrationSettings.needsMigration(this)) {
+            startActivity(Intent(this, LegacyDbMigrationActivity::class.java))
+            finish()
+            return
+        }
 
         if (!OnboardingSettings(this).completed) {
             startActivity(Intent(this, OnboardingActivity::class.java))

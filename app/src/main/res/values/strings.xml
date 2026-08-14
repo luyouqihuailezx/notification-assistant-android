@@ -212,4 +212,12 @@
     <string name="open_settings_failed">无法打开系统设置</string>
     <string name="error_details">错误详情</string>
     <string name="copy_error">复制完整错误信息</string>
+    <string name="legacy_migration_title">旧版数据库迁移</string>
+    <string name="legacy_migration_export_message">检测到旧版数据库。迁移会删除旧版解析结果、AI 数据和不兼容内容，建议先导出加密备份。</string>
+    <string name="legacy_migration_export">导出数据库备份</string>
+    <string name="legacy_migration_export_done">备份已导出。请点击下一步确认迁移。</string>
+    <string name="legacy_migration_backup_saved">已保存备份</string>
+    <string name="legacy_migration_export_missing">导出的备份文件不可用，请重新导出。</string>
+    <string name="legacy_migration_confirm_title">确认不可逆迁移</string>
+    <string name="legacy_migration_confirm_message">迁移不可逆。应用只会提取旧库中的原始通知内容和应用信息，并清理标题中的“X条新消息”后导入；解析、AI 和其他旧版数据将被丢弃。确定继续吗？</string>
 </resources>

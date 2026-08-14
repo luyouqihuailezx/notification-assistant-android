@@ -32,6 +32,12 @@ class MyApplication : Application() {
         lateinit var application: MyApplication
 
         val authSuccess = AtomicBoolean(false)
+
+        fun initializeDatabase(context: android.content.Context) {
+            database = DatabaseFactory.createDatabase(context)
+            notifications = database.boxFor(Notifications::class.java)
+            packageNames = database.boxFor(PackageName::class.java)
+        }
     }
 
     override fun onCreate() {
@@ -42,9 +48,7 @@ class MyApplication : Application() {
         pm = applicationContext.packageManager
         executor = Executors.newCachedThreadPool()
 
-        database = DatabaseFactory.createDatabase(this)
-        notifications = database.boxFor(Notifications::class.java)
-        packageNames = database.boxFor(PackageName::class.java)
+        initializeDatabase(this)
         defaultSwValue = getString(R.string.defaultSwitchValue)
 
         sharedPrefName = "NotInfo"
@@ -53,4 +57,5 @@ class MyApplication : Application() {
 
         registerActivityLifecycleCallbacks(MyActivityLifecycleCallbacks())
     }
+
 }

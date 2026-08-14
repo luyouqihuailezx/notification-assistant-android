@@ -91,6 +91,10 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".activities.migration.LegacyDbMigrationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activities.home.AgentSettingsActivity"
             android:exported="false"
             android:label="@string/agent_service_settings"

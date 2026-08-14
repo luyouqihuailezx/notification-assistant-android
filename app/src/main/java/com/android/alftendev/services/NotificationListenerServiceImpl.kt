@@ -16,6 +16,7 @@ import com.android.alftendev.utils.DBUtils.createPackageName
 import com.android.alftendev.utils.DBUtils.searchDeletedNot
 import com.android.alftendev.utils.DBUtils.searchOneNot
 import com.android.alftendev.utils.MySharedPref
+import com.android.alftendev.utils.NotificationTitleCleaner
 import com.android.alftendev.utils.NotificationsUtils.sendNotification
 import com.android.alftendev.utils.computables.PackageSettingsCache.packageNameExists
 import java.util.concurrent.Executors
@@ -39,9 +40,6 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
     companion object {
         val LOGGER = CustomLog("not-listener")
         private const val DUPLICATE_NOTIFICATION_TIME_WINDOW_MS = 30 * 1000L
-        private val UNREAD_COUNT_SUFFIX = Regex(
-            """\s*(?:[（(]\d+条(?:新消息)?[）)]|\[\d+条(?:新消息)?]|\d+条新消息|\d+条)\s*$"""
-        )
     }
 
     override fun onListenerConnected() {
@@ -251,6 +249,6 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
      * 去掉聊天应用附加在通知标题末尾的未读消息汇总信息，保证同一会话使用稳定标题入库。
      */
     private fun normalizeNotificationTitle(title: String): String {
-        return title.replace(UNREAD_COUNT_SUFFIX, "").trim()
+        return NotificationTitleCleaner.removeUnreadCountSuffix(title)
     }
 }
