@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.drawable.Drawable
 import android.icu.text.Transliterator
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.addCallback
@@ -84,10 +85,12 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     val context = LocalContext.current
     val transliterator = remember { Transliterator.getInstance("Han-Latin; Latin-ASCII") }
     var apps by remember { mutableStateOf<List<PackageName>>(emptyList()) }
+    var systemPackageNames by remember { mutableStateOf<Set<String>>(emptySet()) }
     var selectionRevision by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var actionsExpanded by remember { mutableStateOf(false) }
+    var showSystemApps by remember { mutableStateOf(false) }
     var removalMenuFor by remember { mutableStateOf<String?>(null) }
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
@@ -96,9 +99,11 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
     fun name(app: PackageName) = app.name?.takeIf { it.isNotBlank() } ?: app.pkg
     fun section(app: PackageName) = normalize(name(app)).firstOrNull()?.uppercaseChar()?.takeIf { it in 'A'..'Z' }?.toString() ?: "#"
     val comparator = compareBy<PackageName>({ normalize(name(it)) }, { it.pkg.lowercase() })
-    val filtered = remember(apps, query, selectionRevision) {
+    val userApps = remember(apps, systemPackageNames) { apps.filter { it.pkg !in systemPackageNames } }
+    val visibleApps = if (showSystemApps) apps else userApps
+    val filtered = remember(visibleApps, query, selectionRevision) {
         val normalized = normalize(query)
-        apps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }.sortedWith(comparator)
+        visibleApps.filter { normalized.isBlank() || normalize(name(it)).contains(normalized) || it.pkg.lowercase().contains(normalized) }.sortedWith(comparator)
     }
     val recommendedApps = remember(apps, query, selectionRevision) {
         if (query.isNotBlank()) emptyList() else apps.filter { it.pkg in RECOMMENDED_APP_PACKAGES || name(it) in RECOMMENDED_APP_NAMES }
@@ -110,10 +115,20 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
         loading = true
         MyApplication.executor.execute {
             try {
-                DBUtils.addAllInstalledPackageNames()
-                val installed = AppListCache.getInstalledUserApps().map { it.packageName }.toSet()
+                DBUtils.addAllInstalledPackageNames(includeSystemApps = true)
+                val installedApps = AppListCache.getInstalledApps()
+                val installed = installedApps.map { it.packageName }.toSet()
+                val systemPackages = installedApps
+                    .filter { (it.flags and ApplicationInfo.FLAG_SYSTEM) != 0 }
+                    .map { it.packageName }
+                    .toSet()
                 val result = DBUtils.allPackageName().filter { it.pkg in installed }.sortedWith(comparator)
-                (context as? AppCompatActivity)?.runOnUiThread { apps = result; selectionRevision++; loading = false }
+                (context as? AppCompatActivity)?.runOnUiThread {
+                    apps = result
+                    systemPackageNames = systemPackages
+                    selectionRevision++
+                    loading = false
+                }
             } catch (error: Throwable) {
                 Log.e("AppSelection", "应用列表加载失败", error)
                 (context as? AppCompatActivity)?.runOnUiThread { loading = false; onError(error) }
@@ -174,6 +189,11 @@ internal fun AppSelectionContent(modifier: Modifier = Modifier, onError: (Throwa
                 DropdownMenu(actionsExpanded, { actionsExpanded = false }) {
                     DropdownMenuItem({ Text(stringResource(R.string.select_all)) }, { actionsExpanded = false; setAll(true) })
                     DropdownMenuItem({ Text(stringResource(R.string.deselect_all)) }, { actionsExpanded = false; setAll(false) })
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.show_system_apps)) },
+                        onClick = { showSystemApps = !showSystemApps },
+                        trailingIcon = { Checkbox(showSystemApps, onCheckedChange = { showSystemApps = it }) }
+                    )
                 }
             }
         }
@@ -238,19 +258,26 @@ private val RECOMMENDED_APP_PACKAGES = listOf(
     "com.tencent.mobileqq",
     "com.google.android.apps.messaging",
     "com.android.mms",
+    "com.samsung.android.messaging",
+    "com.miui.sms",
+    "com.huawei.message",
+    "com.google.android.dialer",
+    "com.android.dialer",
+    "com.samsung.android.dialer",
     "com.eg.android.AlipayGphone",
     "com.tencent.wework",
     "com.alibaba.android.rimet",
     "com.ss.android.lark"
 )
 
-private val RECOMMENDED_APP_NAMES = setOf("微信", "QQ", "信息", "支付宝", "企业微信", "钉钉", "飞书")
+private val RECOMMENDED_APP_NAMES = listOf("微信", "QQ", "信息", "短信", "电话", "拨号", "支付宝", "企业微信", "钉钉", "飞书")
 
 private fun recommendedOrder(app: PackageName): Int {
     val packageIndex = RECOMMENDED_APP_PACKAGES.indexOf(app.pkg)
     if (packageIndex >= 0) return packageIndex
     return RECOMMENDED_APP_NAMES.indexOf(app.name).takeIf { it >= 0 } ?: Int.MAX_VALUE
 }
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
