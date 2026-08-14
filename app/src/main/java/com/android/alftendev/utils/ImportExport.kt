@@ -18,6 +18,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileWriter
+import java.io.BufferedInputStream
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -37,6 +38,53 @@ object ImportExport {
         return (1..length)
             .map { chars[secureRandom.nextInt(chars.length)] }
             .joinToString("")
+    }
+
+    /**
+     * Migrating from the legacy app destroys data ObjectBox no longer understands. This backup
+     * intentionally retains the complete private files directory so the prior app can restore it.
+     */
+    fun exportFullAppDataZipEncrypted(context: Context, enteredPassword: String): Pair<String, String> {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val password = enteredPassword.ifBlank { generateSecurePassword() }
+        val zipFile = File(context.filesDir, "notification_listener_backup_$timestamp.zip")
+
+        return try {
+            ZipFile(zipFile, password.toCharArray()).use { zip ->
+                val parameters = ZipParameters().apply {
+                    isEncryptFiles = true
+                    encryptionMethod = EncryptionMethod.AES
+                }
+                addDirectoryContents(context.filesDir, context.filesDir, zip, parameters, zipFile)
+            }
+            shareZip(context, zipFile)
+            Pair(zipFile.absolutePath, password)
+        } catch (error: Exception) {
+            zipFile.delete()
+            LOGGER.log("exportFullAppDataZip error: ${error.stackTraceToString()}")
+            Pair("error", error.stackTraceToString())
+        }
+    }
+
+    private fun addDirectoryContents(
+        rootDirectory: File,
+        directory: File,
+        zip: ZipFile,
+        parameters: ZipParameters,
+        excludedFile: File
+    ) {
+        directory.listFiles()?.forEach { file ->
+            if (file == excludedFile) return@forEach
+            if (file.isDirectory) {
+                addDirectoryContents(rootDirectory, file, zip, parameters, excludedFile)
+            } else {
+                val entryName = file.relativeTo(rootDirectory).invariantSeparatorsPath
+                parameters.fileNameInZip = entryName
+                BufferedInputStream(file.inputStream()).use { input ->
+                    zip.addStream(input, parameters)
+                }
+            }
+        } ?: error("无法读取备份目录：${directory.absolutePath}")
     }
 
     fun exportDbZipEncrypted(context: Context, enteredPassword: String): Pair<String, String> {

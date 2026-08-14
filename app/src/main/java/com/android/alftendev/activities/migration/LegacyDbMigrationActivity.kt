@@ -40,7 +40,7 @@ class LegacyDbMigrationActivity : AppCompatActivity() {
         next.isEnabled = false
         progress.visibility = View.VISIBLE
         MyApplication.executor.execute {
-            val result = ImportExport.exportDbZipEncrypted(this, "")
+            val result = ImportExport.exportFullAppDataZipEncrypted(this, "")
             runOnUiThread {
                 progress.visibility = View.GONE
                 if (result.first == "error") showError(result.second) else showExportSuccess(result)
