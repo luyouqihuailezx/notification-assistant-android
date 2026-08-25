@@ -263,10 +263,10 @@ private fun NotificationHost(
                         onClick = { tab = item },
                         icon = { Icon(painterResource(when (item) {
                             HostTab.HISTORY -> R.drawable.baseline_home_24
-                            HostTab.CALENDAR -> R.drawable.baseline_pie_chart_outline_24
+                            HostTab.CALENDAR -> R.drawable.baseline_calendar_month_24
                             HostTab.AGENT -> R.drawable.baseline_chat_24
                             HostTab.SETTINGS -> R.drawable.baseline_settings_24
-                        }), null) },
+                        }), null, modifier = Modifier.size(20.dp)) },
                         label = { Text(when (item) {
                             HostTab.HISTORY -> context.getString(R.string.notification_history)
                             HostTab.CALENDAR -> "日历"

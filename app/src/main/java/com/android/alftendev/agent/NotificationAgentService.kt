@@ -151,7 +151,12 @@ class NotificationAgentService(private val settings: AgentProviderSettings) {
         val dateIDs = dateFilter?.let(DBUtils::matchingNotificationIds)
         val records = notifications.asSequence()
             .filter { it.time.time in from..to }
-            .filter { dateIDs == null || it.entityId in dateIDs }
+            .filter { notification ->
+                dateIDs == null || notification.entityId in dateIDs ||
+                    MessageDateReferenceParser.referencesIn(contentForDate(notification), notification.time).any { reference ->
+                        dateFilterMatches(reference, dateFilter)
+                    }
+            }
             .filter { notification ->
                 pattern == null || pattern.matcher(notification.title + "\n" + notification.text).find()
             }
@@ -160,6 +165,17 @@ class NotificationAgentService(private val settings: AgentProviderSettings) {
             .toList()
         return JSONObject().put("records", JSONArray(records)).put("warnings", JSONArray(warnings))
     }
+
+    private fun contentForDate(notification: Notifications): String = listOf(notification.title, notification.text, notification.bigText, notification.conversationTitle, notification.infoText, notification.peopleList, notification.titleBig).filterNotNull().joinToString("\n")
+
+    private fun dateFilterMatches(reference: com.android.alftendev.models.MessageDateReference, filter: MessageDateSearchFilter): Boolean =
+        (filter.year == null || reference.year == filter.year) &&
+            (filter.month == null || reference.month == filter.month) &&
+            (filter.day == null || reference.day == filter.day) &&
+            (filter.hour == null || reference.hour == filter.hour) &&
+            (filter.minute == null || reference.minute == filter.minute) &&
+            (filter.second == null || reference.second == filter.second) &&
+            (filter.weekday == null || reference.weekday == filter.weekday)
 
     private fun parseContentDate(value: String, warnings: MutableList<String>): MessageDateSearchFilter? {
         if (value.isBlank()) return null
