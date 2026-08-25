@@ -8,4 +8,5 @@ class NotificationAgentServiceTest {
         assertEquals("https://example.test/models", NotificationAgentService.endpoint("https://example.test", "/models"))
         assertEquals("https://example.test/v1/chat/completions", NotificationAgentService.endpoint("https://example.test/v1/", "chat/completions"))
     }
+
 }
