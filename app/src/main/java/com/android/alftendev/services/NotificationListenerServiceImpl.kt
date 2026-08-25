@@ -128,6 +128,7 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
                 LOGGER.log("SAVED NOTIFICATION: $notification")
 
                 MyApplication.notifications.put(notification)
+                com.android.alftendev.utils.DBUtils.rebuildDateReferences(notification)
             }
 
             recentNotificationsCache.put(
@@ -179,6 +180,7 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
 
                 if (deletedNotification != null) {
                     MyApplication.notifications.put(deletedNotification)
+                    com.android.alftendev.utils.DBUtils.rebuildDateReferences(deletedNotification)
                     sendNotification(this, deletedNotification.title, deletedNotification.text)
                 }
             }

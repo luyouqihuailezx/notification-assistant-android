@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import com.android.alftendev.models.Notifications
 import com.android.alftendev.models.PackageName
+import com.android.alftendev.models.MessageDateReferenceEntity
 import com.android.alftendev.utils.DatabaseFactory
 import com.android.alftendev.utils.MyActivityLifecycleCallbacks
 import com.android.alftendev.utils.computables.PackageSettingsCache.initCache
@@ -19,6 +20,7 @@ class MyApplication : Application() {
         lateinit var database: BoxStore
         lateinit var notifications: Box<Notifications>
         lateinit var packageNames: Box<PackageName>
+        lateinit var dateReferences: Box<MessageDateReferenceEntity>
 
         lateinit var sharedPref: SharedPreferences
         lateinit var sharedPrefName: String
@@ -37,6 +39,7 @@ class MyApplication : Application() {
             database = DatabaseFactory.createDatabase(context)
             notifications = database.boxFor(Notifications::class.java)
             packageNames = database.boxFor(PackageName::class.java)
+            dateReferences = database.boxFor(MessageDateReferenceEntity::class.java)
         }
     }
 
@@ -54,6 +57,10 @@ class MyApplication : Application() {
         sharedPrefName = "NotInfo"
         sharedPref = getSharedPreferences(sharedPrefName, MODE_PRIVATE)
         executor.execute { initCache() }
+        executor.execute {
+            runCatching { com.android.alftendev.utils.DBUtils.backfillDateReferences() }
+                .onFailure { error -> com.android.alftendev.utils.CustomLog("date-index").log("日期索引历史回填失败：${error.stackTraceToString()}") }
+        }
 
         registerActivityLifecycleCallbacks(MyActivityLifecycleCallbacks())
     }

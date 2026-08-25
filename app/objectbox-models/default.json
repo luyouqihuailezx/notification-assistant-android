@@ -110,9 +110,98 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "8:5766206190613952904",
+      "lastPropertyId": "16:7320747456199167995",
+      "name": "MessageDateReferenceEntity",
+      "properties": [
+        {
+          "id": "1:4520548629939321361",
+          "name": "entityId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8390682349855302388",
+          "name": "notificationId",
+          "type": 6
+        },
+        {
+          "id": "3:2169981695742578505",
+          "name": "originalText",
+          "type": 9
+        },
+        {
+          "id": "4:4793830716149699869",
+          "name": "year",
+          "type": 6
+        },
+        {
+          "id": "5:2049504344549557618",
+          "name": "month",
+          "type": 6
+        },
+        {
+          "id": "6:5551697322658578156",
+          "name": "day",
+          "type": 6
+        },
+        {
+          "id": "7:452988757649056939",
+          "name": "hour",
+          "type": 6
+        },
+        {
+          "id": "8:27639773475544593",
+          "name": "minute",
+          "type": 6
+        },
+        {
+          "id": "9:8869924146505619156",
+          "name": "second",
+          "type": 6
+        },
+        {
+          "id": "10:2201826859824233481",
+          "name": "weekday",
+          "type": 6
+        },
+        {
+          "id": "11:3842986258915355644",
+          "name": "precision",
+          "type": 9
+        },
+        {
+          "id": "12:9183647370094458421",
+          "name": "resolvedTimestamp",
+          "type": 6
+        },
+        {
+          "id": "13:9197319027037781764",
+          "name": "candidateRank",
+          "type": 5
+        },
+        {
+          "id": "14:5476544953815190948",
+          "name": "weight",
+          "type": 8
+        },
+        {
+          "id": "15:3273747320722225229",
+          "name": "ruleId",
+          "type": 9
+        },
+        {
+          "id": "16:7320747456199167995",
+          "name": "indexVersion",
+          "type": 5
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "7:7585310920059780729",
+  "lastEntityId": "8:5766206190613952904",
   "lastIndexId": "7:6714376931671988718",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",

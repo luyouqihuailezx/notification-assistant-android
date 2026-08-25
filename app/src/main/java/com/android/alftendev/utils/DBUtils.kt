@@ -9,6 +9,12 @@ import com.android.alftendev.models.Notifications
 import com.android.alftendev.models.Notifications_
 import com.android.alftendev.models.PackageName
 import com.android.alftendev.models.PackageName_
+import com.android.alftendev.models.MessageDateReference
+import com.android.alftendev.models.MessageDateReferenceEntity
+import com.android.alftendev.models.MessageDateReferenceParser
+import com.android.alftendev.models.MessageDatePrecision
+import com.android.alftendev.models.MessageDateSearchFilter
+import com.android.alftendev.models.MessageDateReferenceEntity_
 import com.android.alftendev.utils.Utils.isAppInstalled
 import com.android.alftendev.utils.computables.AppListCache.getInstalledApps
 import com.android.alftendev.utils.computables.AppListCache.getInstalledUserApps
@@ -17,7 +23,53 @@ import io.objectbox.query.QueryBuilder
 import java.util.Date
 
 object DBUtils {
+    const val DATE_INDEX_VERSION = 1
     val LOGGER = CustomLog("noti-database-utils")
+
+    data class CalendarEvent(val referenceId: Long, val notificationId: Long, val app: String, val title: String, val body: String, val reference: MessageDateReference)
+
+    fun rebuildDateReferences(notification: Notifications) {
+        MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.notificationId, notification.entityId).build().remove()
+        val text = listOf(notification.title, notification.text, notification.bigText, notification.conversationTitle, notification.infoText, notification.peopleList, notification.titleBig).filterNotNull().joinToString("\n")
+        val refs = MessageDateReferenceParser.referencesIn(text, notification.time)
+        MyApplication.dateReferences.put(refs.map { it.toEntity(notification.entityId) })
+    }
+
+    fun backfillDateReferences() {
+        val all = notifications.query().build().find()
+        all.chunked(200).forEach { batch -> batch.forEach { notification ->
+            try { rebuildDateReferences(notification) } catch (error: Throwable) { LOGGER.log("日期索引回填失败，通知 ${notification.entityId}: ${error.stackTraceToString()}") }
+        } }
+    }
+
+    fun calendarEvents(from: Date, to: Date, app: String? = null): List<CalendarEvent> {
+        val refs = MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.indexVersion, DATE_INDEX_VERSION.toLong()).build().find()
+            .filter { it.resolvedTimestamp != null && it.resolvedTimestamp!! >= from.time && it.resolvedTimestamp!! < to.time }
+        val notificationsById = notifications.query().build().find().associateBy { it.entityId }
+        return refs.mapNotNull { entity ->
+            val notification = notificationsById[entity.notificationId] ?: return@mapNotNull null
+            val packageName = notification.packageName.target?.name ?: notification.packageName.target?.pkg ?: "未知应用"
+            if (app != null && packageName != app) return@mapNotNull null
+            CalendarEvent(entity.entityId, notification.entityId, packageName, notification.title, notification.bigText ?: notification.text, entity.toReference())
+        }.sortedWith(compareBy({ it.reference.resolvedDate }, { it.reference.candidateRank }, { it.notificationId }))
+    }
+
+    fun availableDateApps(): List<String> = notifications.query().build().find().mapNotNull { it.packageName.target?.name ?: it.packageName.target?.pkg }.distinct().sorted()
+
+    fun notificationById(id: Long): Notifications? = notifications.get(id)
+
+    fun matchingNotificationIds(filter: MessageDateSearchFilter): Set<Long> {
+        val result = MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.indexVersion, DATE_INDEX_VERSION.toLong()).build().find()
+        return result.filter { entity ->
+            (filter.year == null || entity.year == filter.year.toLong()) && (filter.month == null || entity.month == filter.month.toLong()) &&
+                (filter.day == null || entity.day == filter.day.toLong()) && (filter.hour == null || entity.hour == filter.hour.toLong()) &&
+                (filter.minute == null || entity.minute == filter.minute.toLong()) && (filter.second == null || entity.second == filter.second.toLong()) &&
+                (filter.weekday == null || entity.weekday == filter.weekday.toLong()) && (filter.from == null || (entity.resolvedTimestamp ?: Long.MIN_VALUE) >= filter.from.time) &&
+                (filter.to == null || (entity.resolvedTimestamp ?: Long.MAX_VALUE) <= filter.to.time) && (filter.originalText.isNullOrBlank() || entity.originalText.contains(filter.originalText!!, true))
+        }.map { it.notificationId }.toSet()
+    }
+
+    fun deleteDateReferences(ids: Collection<Long>) { ids.forEach { id -> MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.notificationId, id).build().remove() } }
 
     fun searchDeletedNot(pkgName: String, date: Long, title: String, text: String): Notifications? {
         return notifications
@@ -262,6 +314,7 @@ object DBUtils {
 
         if (packageName != null) {
             notifications.put(notification)
+            rebuildDateReferences(notification)
         }
     }
 
@@ -409,11 +462,15 @@ object DBUtils {
             .equal(Notifications_.entityId, id)
             .build()
             .remove()
+        deleteDateReferences(listOf(id))
+        deleteDateReferences(listOf(id))
     }
 
     fun deleteMultipleNotificationByIds(id: List<Long>) {
         try {
             notifications.removeByIds(id)
+            deleteDateReferences(id)
+            deleteDateReferences(id)
         } catch (e: Exception) {
             LOGGER.log("Error while deleting multiple notification by ids: ${e.stackTraceToString()}")
         }
@@ -428,3 +485,25 @@ object DBUtils {
         }
     }
 }
+
+private fun MessageDateReference.toEntity(notificationId: Long) = MessageDateReferenceEntity(
+    notificationId = notificationId,
+    originalText = originalText,
+    year = year?.toLong(), month = month?.toLong(), day = day?.toLong(), hour = hour?.toLong(), minute = minute?.toLong(), second = second?.toLong(), weekday = weekday?.toLong(),
+    precision = precision.name,
+    resolvedTimestamp = resolvedDate?.time,
+    candidateRank = candidateRank,
+    weight = weight,
+    ruleId = ruleId,
+    indexVersion = DBUtils.DATE_INDEX_VERSION
+)
+
+private fun MessageDateReferenceEntity.toReference() = MessageDateReference(
+    originalText = originalText,
+    year = year?.toInt(), month = month?.toInt(), day = day?.toInt(), hour = hour?.toInt(), minute = minute?.toInt(), second = second?.toInt(), weekday = weekday?.toInt(),
+    precision = MessageDatePrecision.entries.firstOrNull { it.name == precision } ?: MessageDatePrecision.DAY,
+    resolvedDate = resolvedTimestamp?.let(::Date),
+    candidateRank = candidateRank,
+    weight = weight,
+    ruleId = ruleId
+)

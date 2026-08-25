@@ -74,6 +74,7 @@ import com.android.alftendev.activities.home.NotificationSettingsContent
 import com.android.alftendev.agent.AgentController
 import com.android.alftendev.agent.NotificationAgentScreen
 import com.android.alftendev.models.Notifications
+import com.android.alftendev.composes.NotificationCalendarScreen
 import com.android.alftendev.models.getParsedNoti
 import com.android.alftendev.services.NotificationListenerKeepAlive
 import com.android.alftendev.ui.theme.NotificationListenerTheme
@@ -91,6 +92,8 @@ import com.android.alftendev.utils.Utils
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.android.alftendev.models.MessageDateReferenceParser
+import java.util.Date
 
 abstract class NotificationListViewerBaseActivity : AppCompatActivity() {
     abstract fun getNotifications(): List<Notifications>
@@ -131,7 +134,7 @@ abstract class NotificationListViewerBaseActivity : AppCompatActivity() {
 
 }
 
-private enum class HostTab { HISTORY, AGENT, SETTINGS }
+private enum class HostTab { HISTORY, CALENDAR, AGENT, SETTINGS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,7 +168,21 @@ private fun NotificationHost(
     fun refresh(filter: String = query) {
         loading = true
         MyApplication.executor.execute {
-            runCatching { if (filter.isBlank()) load() else search(filter) }
+            runCatching {
+                val dateIDs = MessageDateReferenceParser.referencesIn(filter, Date()).takeIf { filter.isNotBlank() }?.let { refs ->
+                    if (refs.isEmpty()) null else DBUtils.matchingNotificationIds(refs.first().let { ref ->
+                        com.android.alftendev.models.MessageDateSearchFilter(
+                            year = ref.year, month = ref.month, day = ref.day,
+                            hour = ref.hour, minute = ref.minute, second = ref.second, weekday = ref.weekday
+                        )
+                    })
+                }
+                when {
+                    dateIDs != null -> load().filter { it.entityId in dateIDs }
+                    filter.isBlank() -> load()
+                    else -> search(filter)
+                }
+            }
                 .onSuccess { result -> activity.runOnUiThread { notifications = result; loading = false; revision++ } }
                 .onFailure { throwable ->
                     Log.e("NotificationList", "通知加载失败", throwable)
@@ -189,6 +206,7 @@ private fun NotificationHost(
                 title = {
                     when (tab) {
                         HostTab.HISTORY -> Text(if (title.isBlank()) context.getString(R.string.notification_history) else title)
+                        HostTab.CALENDAR -> Text("日历")
                         HostTab.AGENT -> Box {
                             TextButton(onClick = { sessionMenuExpanded = true }) {
                                 Text(context.getString(R.string.agent_session_title, agentController.active.title))
@@ -208,6 +226,7 @@ private fun NotificationHost(
                                 }
                             }
                         }
+                        HostTab.CALENDAR -> Unit
                         HostTab.SETTINGS -> Text(context.getString(R.string.settings))
                     }
                 },
@@ -226,6 +245,7 @@ private fun NotificationHost(
                                 Icon(painterResource(R.drawable.baseline_delete_24), "删除当前会话")
                             }
                         }
+                        HostTab.CALENDAR -> Unit
                         HostTab.SETTINGS -> Unit
                     }
                 },
@@ -243,11 +263,13 @@ private fun NotificationHost(
                         onClick = { tab = item },
                         icon = { Icon(painterResource(when (item) {
                             HostTab.HISTORY -> R.drawable.baseline_home_24
+                            HostTab.CALENDAR -> R.drawable.baseline_pie_chart_outline_24
                             HostTab.AGENT -> R.drawable.baseline_chat_24
                             HostTab.SETTINGS -> R.drawable.baseline_settings_24
                         }), null) },
                         label = { Text(when (item) {
                             HostTab.HISTORY -> context.getString(R.string.notification_history)
+                            HostTab.CALENDAR -> "日历"
                             HostTab.AGENT -> context.getString(R.string.notification_agent)
                             HostTab.SETTINGS -> context.getString(R.string.settings)
                         }) }
@@ -266,6 +288,15 @@ private fun NotificationHost(
             )
             HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
                 NotificationAgentScreen(agentController, padding.calculateBottomPadding())
+            }
+            HostTab.CALENDAR -> NotificationCalendarScreen { id ->
+                MyApplication.executor.execute {
+                    val record = DBUtils.notificationById(id)
+                    activity.runOnUiThread {
+                        record?.let { detail = it }
+                            ?: run { error = "无法打开通知 $id：记录不存在或已被删除\n\n完整错误信息：数据库中未找到通知 ID $id" }
+                    }
+                }
             }
             HostTab.SETTINGS -> Box(Modifier.fillMaxSize().padding(padding)) {
                 NotificationSettingsContent(showNavigation = false)
