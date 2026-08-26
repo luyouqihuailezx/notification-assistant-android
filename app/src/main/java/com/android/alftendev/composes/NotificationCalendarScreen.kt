@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import com.android.alftendev.MyApplication
 import com.android.alftendev.utils.DBUtils
 import com.android.alftendev.utils.DateUtils
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -119,12 +120,20 @@ fun NotificationCalendarScreen(modifier: Modifier = Modifier, onOpen: (Long) -> 
                 val start = rangeStart(currentAnchor, currentMode)
                 val end = rangeEnd(currentAnchor, currentMode, start)
                 val loaded = DBUtils.calendarEvents(start, end, currentApp)
-                val available = DBUtils.availableDateApps()
                 (MyApplication.application as android.app.Application).mainExecutor.execute {
                     events = loaded
-                    apps = available
                     error = null
                     loading = false
+                }
+                try {
+                    val available = DBUtils.availableDateApps()
+                    (MyApplication.application as android.app.Application).mainExecutor.execute {
+                        apps = available
+                    }
+                } catch (appError: Throwable) {
+                    val details = "加载应用列表失败：${appError.localizedMessage}\n\n完整错误信息：${appError.stackTraceToString()}"
+                    DBUtils.LOGGER.log(details)
+                    (MyApplication.application as android.app.Application).mainExecutor.execute { error = details }
                 }
             } catch (t: Throwable) {
                 val details = "加载日历失败：${t.localizedMessage}\n\n完整错误信息：${t.stackTraceToString()}"
@@ -137,14 +146,18 @@ fun NotificationCalendarScreen(modifier: Modifier = Modifier, onOpen: (Long) -> 
         }
     }
     LaunchedEffect(anchor, mode, app) { refresh() }
+    LaunchedEffect(Unit) {
+        delay(2000)
+        refresh()
+    }
 
     val eventsByDay = remember(events) {
         events.groupBy { event ->
-            event.reference.resolvedDate?.let { startOfDay(it).time } ?: Long.MIN_VALUE
+            event.reference.resolvedDate?.let(::dayKey) ?: Long.MIN_VALUE
         }
     }
     val eventsOnDay: (Date) -> List<DBUtils.CalendarEvent> = { day ->
-        eventsByDay[startOfDay(day).time].orEmpty()
+        eventsByDay[dayKey(day)].orEmpty()
     }
 
     fun moveAnchor(amount: Int) {
@@ -176,7 +189,15 @@ fun NotificationCalendarScreen(modifier: Modifier = Modifier, onOpen: (Long) -> 
             onApp = { app = it }
         )
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-        Box(Modifier.weight(1f).clipToBounds()) {
+        if (!loading && events.isEmpty()) {
+            Text(
+                "没有相关通知",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+        Box(Modifier.weight(1f, fill = true).fillMaxWidth().clipToBounds()) {
             when (mode) {
                 CalendarMode.DAY -> DayView(
                     anchor = anchor,
@@ -200,6 +221,7 @@ fun NotificationCalendarScreen(modifier: Modifier = Modifier, onOpen: (Long) -> 
                     when (snapshot.mode) {
                         CalendarMode.MONTH -> MonthGrid(
                             anchor = snapshot.anchor,
+                            events = events,
                             eventsOnDay = eventsOnDay,
                             onSelectDay = { day ->
                                 dayTransitionIncludesIndex = false
@@ -299,6 +321,7 @@ private fun CalendarHeader(
 @Composable
 private fun MonthGrid(
     anchor: Date,
+    events: List<DBUtils.CalendarEvent>,
     eventsOnDay: (Date) -> List<DBUtils.CalendarEvent>,
     onSelectDay: (Date) -> Unit,
     onShift: (Int) -> Unit
@@ -307,7 +330,7 @@ private fun MonthGrid(
     val weekdays = remember { weekdayLabels() }
     Column(
         Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .periodSwipe(onShift)
             .verticalScroll(rememberScrollState())
             .padding(8.dp),
@@ -338,6 +361,9 @@ private fun MonthGrid(
                 }
                 repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
             }
+        }
+        if (events.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -861,6 +887,11 @@ private fun eventTimeLabel(event: DBUtils.CalendarEvent): String =
 
 private fun visibleHours(events: List<DBUtils.CalendarEvent>): List<Int> =
     events.mapNotNull { it.reference.resolvedDate?.let(::hourOf) }.toSortedSet().toList()
+
+private fun dayKey(date: Date): Long {
+    val cal = Calendar.getInstance().apply { time = date }
+    return cal.get(Calendar.YEAR) * 10_000L + (cal.get(Calendar.MONTH) + 1) * 100L + cal.get(Calendar.DAY_OF_MONTH)
+}
 
 private fun colorForApp(app: String): Color {
     var hash = 0L

@@ -289,7 +289,7 @@ private fun NotificationHost(
             HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
                 NotificationAgentScreen(agentController, padding.calculateBottomPadding())
             }
-            HostTab.CALENDAR -> NotificationCalendarScreen(Modifier.padding(padding)) { id ->
+            HostTab.CALENDAR -> NotificationCalendarScreen(Modifier.fillMaxSize().padding(padding)) { id ->
                 MyApplication.executor.execute {
                     val record = DBUtils.notificationById(id)
                     activity.runOnUiThread {

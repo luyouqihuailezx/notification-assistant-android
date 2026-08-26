@@ -54,8 +54,16 @@ object DBUtils {
     }
 
     fun calendarEvents(from: Date, to: Date, app: String? = null): List<CalendarEvent> {
-        val refs = MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.indexVersion, DATE_INDEX_VERSION.toLong()).build().find()
-            .filter { it.resolvedTimestamp != null && it.resolvedTimestamp!! >= from.time && it.resolvedTimestamp!! < to.time }
+        val minVersion = (DATE_INDEX_VERSION - 1).coerceAtLeast(1)
+        val refs = MyApplication.dateReferences.query().build().find()
+            .filter { entity ->
+                entity.indexVersion >= minVersion &&
+                    entity.resolvedTimestamp != null &&
+                    entity.resolvedTimestamp!! >= from.time &&
+                    entity.resolvedTimestamp!! < to.time
+            }
+            .groupBy { it.notificationId to it.originalText }
+            .mapNotNull { (_, group) -> group.maxByOrNull { it.indexVersion } }
         val notificationsById = notifications.query().build().find().associateBy { it.entityId }
         return refs.mapNotNull { entity ->
             val notification = notificationsById[entity.notificationId] ?: return@mapNotNull null
