@@ -202,58 +202,58 @@ private fun NotificationHost(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    when (tab) {
-                        HostTab.HISTORY -> Text(if (title.isBlank()) context.getString(R.string.notification_history) else title)
-                        HostTab.CALENDAR -> Text("日历")
-                        HostTab.AGENT -> Box {
-                            TextButton(onClick = { sessionMenuExpanded = true }) {
-                                Text(context.getString(R.string.agent_session_title, agentController.active.title))
-                            }
-                            DropdownMenu(
-                                expanded = sessionMenuExpanded,
-                                onDismissRequest = { sessionMenuExpanded = false }
-                            ) {
-                                agentController.sessions.forEach { session ->
-                                    DropdownMenuItem(
-                                        text = { Text(session.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                        onClick = {
-                                            agentController.switchTo(session.id)
-                                            sessionMenuExpanded = false
-                                        }
-                                    )
+            if (tab != HostTab.CALENDAR) {
+                TopAppBar(
+                    title = {
+                        when (tab) {
+                            HostTab.HISTORY -> Text(if (title.isBlank()) context.getString(R.string.notification_history) else title)
+                            HostTab.AGENT -> Box {
+                                TextButton(onClick = { sessionMenuExpanded = true }) {
+                                    Text(context.getString(R.string.agent_session_title, agentController.active.title))
+                                }
+                                DropdownMenu(
+                                    expanded = sessionMenuExpanded,
+                                    onDismissRequest = { sessionMenuExpanded = false }
+                                ) {
+                                    agentController.sessions.forEach { session ->
+                                        DropdownMenuItem(
+                                            text = { Text(session.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                            onClick = {
+                                                agentController.switchTo(session.id)
+                                                sessionMenuExpanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
+                            HostTab.SETTINGS -> Text(context.getString(R.string.settings))
+                            HostTab.CALENDAR -> Unit
                         }
-                        HostTab.CALENDAR -> Unit
-                        HostTab.SETTINGS -> Text(context.getString(R.string.settings))
-                    }
-                },
-                actions = {
-                    when (tab) {
-                        HostTab.HISTORY -> if (selected.isNotEmpty()) {
-                            IconButton(onClick = { confirmDelete = true }) {
-                                Icon(painterResource(R.drawable.baseline_delete_24), "删除")
+                    },
+                    actions = {
+                        when (tab) {
+                            HostTab.HISTORY -> if (selected.isNotEmpty()) {
+                                IconButton(onClick = { confirmDelete = true }) {
+                                    Icon(painterResource(R.drawable.baseline_delete_24), "删除")
+                                }
                             }
+                            HostTab.AGENT -> {
+                                TextButton(onClick = { agentController.createSession() }) {
+                                    Text(context.getString(R.string.agent_new_session))
+                                }
+                                IconButton(onClick = { confirmDeleteSession = true }) {
+                                    Icon(painterResource(R.drawable.baseline_delete_24), "删除当前会话")
+                                }
+                            }
+                            HostTab.CALENDAR, HostTab.SETTINGS -> Unit
                         }
-                        HostTab.AGENT -> {
-                            TextButton(onClick = { agentController.createSession() }) {
-                                Text(context.getString(R.string.agent_new_session))
-                            }
-                            IconButton(onClick = { confirmDeleteSession = true }) {
-                                Icon(painterResource(R.drawable.baseline_delete_24), "删除当前会话")
-                            }
-                        }
-                        HostTab.CALENDAR -> Unit
-                        HostTab.SETTINGS -> Unit
-                    }
-                },
-                expandedHeight = 48.dp,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    },
+                    expandedHeight = 48.dp,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -289,7 +289,7 @@ private fun NotificationHost(
             HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
                 NotificationAgentScreen(agentController, padding.calculateBottomPadding())
             }
-            HostTab.CALENDAR -> NotificationCalendarScreen { id ->
+            HostTab.CALENDAR -> NotificationCalendarScreen(Modifier.padding(padding)) { id ->
                 MyApplication.executor.execute {
                     val record = DBUtils.notificationById(id)
                     activity.runOnUiThread {
