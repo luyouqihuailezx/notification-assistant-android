@@ -48,7 +48,7 @@ class NotificationWidgetAdapter(
         try {
             itemList = future.get()
         } catch (e: Exception) {
-            LOGGER.log("Error while loading widget ${e.stackTraceToString()}")
+            LOGGER.log("加载小组件列表失败（$type）：${e.stackTraceToString()}")
             itemList = emptyList()
         }
     }
