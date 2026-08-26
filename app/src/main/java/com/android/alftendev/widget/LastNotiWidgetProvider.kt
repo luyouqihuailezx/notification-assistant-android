@@ -18,6 +18,10 @@ class LastNotiWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
             val intent = Intent(context, LastNotiWidgetService::class.java)
             views.setRemoteAdapter(R.id.widget_list, intent)
+            views.setTextViewText(
+                R.id.widgetTitleTv,
+                context.getString(R.string.last_noti_title)
+            )
 
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_list)
 

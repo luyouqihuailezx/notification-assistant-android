@@ -114,7 +114,8 @@
 
         <receiver
             android:name=".widget.LastNotiWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/last_noti_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -125,7 +126,8 @@
         </receiver>
         <receiver
             android:name=".widget.ChatNotiWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/chat_noti_widget_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -136,7 +138,8 @@
         </receiver>
         <receiver
             android:name=".widget.DeletedNotiWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/deleted_noti_widget_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -147,7 +150,8 @@
         </receiver>
         <receiver
             android:name=".widget.UpcomingNotiWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/upcoming_noti_widget_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

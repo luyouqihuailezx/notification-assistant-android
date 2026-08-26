@@ -5,6 +5,6 @@ import android.widget.RemoteViewsService
 
 class LastNotiWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
-        return NotificationWidgetAdapter(this.applicationContext)
+        return NotificationWidgetAdapter(this.applicationContext, NotificationWidgetListType.LAST)
     }
 }

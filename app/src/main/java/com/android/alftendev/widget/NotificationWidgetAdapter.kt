@@ -7,11 +7,20 @@ import com.android.alftendev.R
 import com.android.alftendev.models.Notifications
 import com.android.alftendev.models.getParsedNoti
 import com.android.alftendev.utils.CustomLog
+import com.android.alftendev.utils.DBUtils.deletedNotificationForWidget
+import com.android.alftendev.utils.DBUtils.getChatNotificationsForWidget
 import com.android.alftendev.utils.DBUtils.lastNotificationWithLimit
 import com.android.alftendev.utils.DateUtils.dateFormatter
 import java.util.concurrent.Executors
 
-class NotificationWidgetAdapter(private val context: Context) :
+enum class NotificationWidgetListType {
+    LAST, CHAT, DELETED
+}
+
+class NotificationWidgetAdapter(
+    private val context: Context,
+    private val type: NotificationWidgetListType = NotificationWidgetListType.LAST
+) :
     RemoteViewsService.RemoteViewsFactory {
 
     companion object {
@@ -29,7 +38,11 @@ class NotificationWidgetAdapter(private val context: Context) :
 
     override fun onDataSetChanged() {
         val future = widgetExecutor.submit<List<Notifications>> {
-            lastNotificationWithLimit()
+            when (type) {
+                NotificationWidgetListType.LAST -> lastNotificationWithLimit()
+                NotificationWidgetListType.CHAT -> getChatNotificationsForWidget()
+                NotificationWidgetListType.DELETED -> deletedNotificationForWidget()
+            }
         }
 
         try {
