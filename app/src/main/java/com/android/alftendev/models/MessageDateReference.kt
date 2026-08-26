@@ -49,7 +49,7 @@ data class MessageDateSearchFilter(
 
 object MessageDateReferenceParser {
     // 解析规则变化时递增，启动归档数据库会自动为历史通知重建日期索引。
-    const val INDEX_VERSION = 2
+    const val INDEX_VERSION = 3
 
     private data class Clock(val hour: Int? = null, val minute: Int? = null, val second: Int? = null)
     private data class Match(val text: String, val groups: List<String?>, val start: Int, val end: Int)
@@ -91,6 +91,15 @@ object MessageDateReferenceParser {
     private val relativeWeeks = listOf(
         "上上周" to -2, "上周" to -1, "上星期" to -1, "本周" to 0, "这周" to 0, "本星期" to 0,
         "下周" to 1, "下星期" to 1, "下下周" to 2, "last week" to -1, "this week" to 0, "next week" to 1
+    )
+    private val soonTokens = listOf(
+        "过一会儿", "待一会儿", "等一会儿", "晚些时候",
+        "过一会", "待会儿", "等会儿", "过会儿",
+        "稍晚点", "稍晚些", "晚一点", "迟一点",
+        "稍后", "稍候", "稍晚", "稍等", "马上", "立刻", "立即",
+        "待会", "等会", "过会",
+        "晚点", "晚些", "迟点", "迟些",
+        "一会儿"
     )
     private val standalonePeriods = listOf(
         "凌晨" to 0, "早上" to 9, "早晨" to 9, "清晨" to 9, "早" to 9, "上午" to 9,
@@ -165,6 +174,23 @@ object MessageDateReferenceParser {
         }
 
         val explicitDateRanges = explicitDateRanges(source)
+        val soonRanges = mutableListOf<IntRange>()
+        for (token in soonTokens) {
+            for (range in ranges(token, source)) {
+                val tokenRange = range.first until (range.first + token.length)
+                if (soonRanges.any { rangesOverlap(it, tokenRange) }) continue
+                if (hasDateAnchorImmediatelyBefore(range.first, source)) continue
+                if (explicitDateRanges.any { rangesOverlap(it, tokenRange) || rangeImmediatelyBefore(it, tokenRange.first, source) }) continue
+                soonRanges += tokenRange
+                result += relativeDurationReference(
+                    source.substring(tokenRange.first, tokenRange.last + 1),
+                    add(referenceDate, Calendar.HOUR_OF_DAY, 1, timeZone),
+                    MessageDatePrecision.HOUR,
+                    timeZone,
+                    "relative_soon"
+                )
+            }
+        }
         val periodClockRanges = matches(periodClock, source).map { it.start until it.end }
         for (m in matches(periodClock, source)) {
             val hour = n(m.groups[1]) ?: continue
@@ -182,6 +208,7 @@ object MessageDateReferenceParser {
                 val periodRange = range.first until (range.first + period.length)
                 if (explicitDateRanges.any { rangesOverlap(it, periodRange) }) continue
                 if (periodClockRanges.any { rangesOverlap(it, periodRange) }) continue
+                if (soonRanges.any { rangesOverlap(it, periodRange) }) continue
                 if (hasDateAnchorImmediatelyBefore(range.first, source)) continue
                 nearestDayCandidates(hour, null, referenceDate, timeZone).forEachIndexed { rank, date ->
                     result += reference(period, date, Clock(hour), timeZone, rank, if (rank == 0) 1.0 else 0.75, "standalone_period")
@@ -263,6 +290,11 @@ object MessageDateReferenceParser {
     }
 
     private fun rangesOverlap(lhs: IntRange, rhs: IntRange) = lhs.first < rhs.last + 1 && rhs.first < lhs.last + 1
+
+    private fun rangeImmediatelyBefore(lhs: IntRange, start: Int, text: String): Boolean {
+        if (lhs.last + 1 > start) return false
+        return text.substring(lhs.last + 1, start).all { it.isWhitespace() }
+    }
 
     private fun normalize(references: List<MessageDateReference>): List<MessageDateReference> {
         val explicitIds = setOf("absolute_numeric", "month_day", "month_day_dotted", "absolute_english", "relative_month_day", "relative_month_weekday")
@@ -391,9 +423,15 @@ object MessageDateReferenceParser {
         )
     }
 
-    private fun relativeDurationReference(text: String, date: Date?, precision: MessageDatePrecision, timeZone: TimeZone): MessageDateReference {
+    private fun relativeDurationReference(
+        text: String,
+        date: Date?,
+        precision: MessageDatePrecision,
+        timeZone: TimeZone,
+        ruleId: String = "relative_duration"
+    ): MessageDateReference {
         if (date == null) {
-            return MessageDateReference(text, null, null, null, null, null, null, null, precision, null, 0, 1.0, "relative_duration")
+            return MessageDateReference(text, null, null, null, null, null, null, null, precision, null, 0, 1.0, ruleId)
         }
         val parts = calendar(timeZone, date)
         return MessageDateReference(
@@ -409,7 +447,7 @@ object MessageDateReferenceParser {
             resolvedDate = date,
             candidateRank = 0,
             weight = 1.0,
-            ruleId = "relative_duration"
+            ruleId = ruleId
         )
     }
 

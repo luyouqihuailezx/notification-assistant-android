@@ -15,7 +15,7 @@ class MessageDateReferenceTest {
     private val utc = TimeZone.getTimeZone("UTC")
 
     @Test fun indexVersionIsIncrementedForParserChanges() {
-        assertEquals(2, MessageDateReferenceParser.INDEX_VERSION)
+        assertEquals(3, MessageDateReferenceParser.INDEX_VERSION)
     }
 
     @Test fun resolvesRelativeDateAndMarkedClock() {
@@ -136,5 +136,39 @@ class MessageDateReferenceTest {
 
         val nextFriday = MessageDateReferenceParser.referencesIn("下周五 8pm", reference, utc)
         assertTrue(nextFriday.any { it.weekday == 6 && it.hour == 20 && it.day == 21 })
+    }
+
+    @Test fun resolvesVagueSoonWordsAsOneHourAfterNotification() {
+        val reference = format.parse("2026-08-13 09:00")!!
+        val tokens = listOf("稍后", "马上", "待会", "过一会", "晚点", "稍晚", "待会儿", "一会儿", "立刻")
+        for (token in tokens) {
+            val parsed = MessageDateReferenceParser.referencesIn("${token}处理", reference, utc)
+            assertTrue(
+                "未识别近期用语：$token -> ${parsed.joinToString { "${it.originalText}/${it.ruleId}/${it.hour}:${it.minute}" }}",
+                parsed.any { candidate ->
+                    candidate.ruleId == "relative_soon" &&
+                        candidate.originalText == token &&
+                        candidate.hour == 10 &&
+                        candidate.minute == 0 &&
+                        candidate.precision == MessageDatePrecision.HOUR &&
+                        kotlin.math.abs((candidate.resolvedDate?.time ?: Long.MAX_VALUE) - (reference.time + 3_600_000L)) < 1
+                }
+            )
+        }
+    }
+
+    @Test fun vagueSoonDoesNotOverrideExplicitDateOrSplitEveningToken() {
+        val reference = format.parse("2026-08-13 09:00")!!
+        val tomorrow = MessageDateReferenceParser.referencesIn("明天马上开会", reference, utc)
+        assertTrue(tomorrow.any { it.ruleId == "relative_day" && it.day == 14 })
+        assertFalse(tomorrow.any { it.ruleId == "relative_soon" })
+
+        val tonight = MessageDateReferenceParser.referencesIn("今晚晚点再聊", reference, utc)
+        assertTrue(tonight.any { it.originalText == "今晚" })
+        assertFalse(tonight.any { it.ruleId == "relative_soon" })
+
+        val later = MessageDateReferenceParser.referencesIn("晚点处理", reference, utc)
+        assertTrue(later.any { it.ruleId == "relative_soon" && it.originalText == "晚点" })
+        assertFalse(later.any { it.ruleId == "standalone_period" && it.originalText == "晚" })
     }
 }
