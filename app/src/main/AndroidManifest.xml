@@ -146,6 +146,17 @@
                 android:resource="@xml/deleted_noti_widget_info" />
         </receiver>
         <receiver
+            android:name=".widget.UpcomingNotiWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/upcoming_noti_widget_info" />
+        </receiver>
+        <receiver
             android:name=".services.NotificationListenerBootReceiver"
             android:exported="true">
             <intent-filter>
@@ -184,6 +195,14 @@
         </service>
         <service
             android:name=".widget.DeletedNotiWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS">
+            <intent-filter>
+                <action android:name="android.widget.RemoteViewsService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".widget.UpcomingNotiWidgetService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS">
             <intent-filter>

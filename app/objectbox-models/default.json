@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:8878416491191500552",
-      "lastPropertyId": "42:4395474190926034324",
+      "lastPropertyId": "43:2425823487426279171",
       "name": "Notifications",
       "properties": [
         {
@@ -66,6 +66,11 @@
           "type": 11,
           "flags": 520,
           "relationTarget": "PackageName"
+        },
+        {
+          "id": "43:2425823487426279171",
+          "name": "dateIndexVersion",
+          "type": 5
         }
       ],
       "relations": []

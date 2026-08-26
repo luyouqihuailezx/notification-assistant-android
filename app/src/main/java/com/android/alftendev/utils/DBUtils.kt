@@ -18,28 +18,39 @@ import com.android.alftendev.models.MessageDateReferenceEntity_
 import com.android.alftendev.utils.Utils.isAppInstalled
 import com.android.alftendev.utils.computables.AppListCache.getInstalledApps
 import com.android.alftendev.utils.computables.AppListCache.getInstalledUserApps
+import com.android.alftendev.widget.UpcomingNotiWidgetProvider
 import io.objectbox.query.LazyList
 import io.objectbox.query.QueryBuilder
+import java.util.Calendar
 import java.util.Date
 
 object DBUtils {
-    const val DATE_INDEX_VERSION = 1
+    const val DATE_INDEX_VERSION = MessageDateReferenceParser.INDEX_VERSION
     val LOGGER = CustomLog("noti-database-utils")
 
     data class CalendarEvent(val referenceId: Long, val notificationId: Long, val app: String, val title: String, val body: String, val reference: MessageDateReference)
 
-    fun rebuildDateReferences(notification: Notifications) {
+    fun rebuildDateReferences(notification: Notifications, refreshWidget: Boolean = true) {
         MyApplication.dateReferences.query().equal(MessageDateReferenceEntity_.notificationId, notification.entityId).build().remove()
         val text = listOf(notification.title, notification.text, notification.bigText, notification.conversationTitle, notification.infoText, notification.peopleList, notification.titleBig).filterNotNull().joinToString("\n")
         val refs = MessageDateReferenceParser.referencesIn(text, notification.time)
         MyApplication.dateReferences.put(refs.map { it.toEntity(notification.entityId) })
+        notification.dateIndexVersion = DATE_INDEX_VERSION
+        notifications.put(notification)
+        if (refreshWidget && refs.isNotEmpty()) {
+            UpcomingNotiWidgetProvider.refreshAll(MyApplication.application)
+        }
     }
 
     fun backfillDateReferences() {
-        val all = notifications.query().build().find()
-        all.chunked(200).forEach { batch -> batch.forEach { notification ->
-            try { rebuildDateReferences(notification) } catch (error: Throwable) { LOGGER.log("日期索引回填失败，通知 ${notification.entityId}: ${error.stackTraceToString()}") }
+        val pending = notifications.query()
+            .notEqual(Notifications_.dateIndexVersion, DATE_INDEX_VERSION.toLong())
+            .build()
+            .find()
+        pending.chunked(200).forEach { batch -> batch.forEach { notification ->
+            try { rebuildDateReferences(notification, refreshWidget = false) } catch (error: Throwable) { LOGGER.log("日期索引回填失败，通知 ${notification.entityId}: ${error.stackTraceToString()}") }
         } }
+        UpcomingNotiWidgetProvider.refreshAll(MyApplication.application)
     }
 
     fun calendarEvents(from: Date, to: Date, app: String? = null): List<CalendarEvent> {
@@ -52,6 +63,38 @@ object DBUtils {
             if (app != null && packageName != app) return@mapNotNull null
             CalendarEvent(entity.entityId, notification.entityId, packageName, notification.title, notification.bigText ?: notification.text, entity.toReference())
         }.sortedWith(compareBy({ it.reference.resolvedDate }, { it.reference.candidateRank }, { it.notificationId }))
+    }
+
+    fun upcomingEvents(now: Date = Date()): List<CalendarEvent> {
+        val lower = now.time - 86_400_000L
+        val upper = now.time + 86_400_000L
+        val calendar = Calendar.getInstance()
+        return calendarEvents(Date(lower), Date(upper + 1)).mapNotNull { event ->
+            val rawDate = event.reference.resolvedDate ?: return@mapNotNull null
+            val effectiveDate = if (event.reference.precision == MessageDatePrecision.DAY) {
+                endOfDay(rawDate, calendar)
+            } else {
+                rawDate
+            }
+            if (effectiveDate.after(now) && effectiveDate.time <= upper) {
+                event.copy(reference = event.reference.copy(resolvedDate = effectiveDate, precision = event.reference.precision))
+            } else {
+                null
+            }
+        }.sortedWith(compareBy({ it.reference.resolvedDate }, { it.reference.candidateRank }, { it.notificationId }))
+            .take(20)
+    }
+
+    private fun endOfDay(date: Date, calendar: Calendar): Date {
+        val start = calendar.clone() as Calendar
+        start.time = date
+        start.set(Calendar.HOUR_OF_DAY, 0)
+        start.set(Calendar.MINUTE, 0)
+        start.set(Calendar.SECOND, 0)
+        start.set(Calendar.MILLISECOND, 0)
+        start.add(Calendar.DAY_OF_YEAR, 1)
+        start.add(Calendar.SECOND, -1)
+        return start.time
     }
 
     fun availableDateApps(): List<String> = notifications.query().build().find().mapNotNull { it.packageName.target?.name ?: it.packageName.target?.pkg }.distinct().sorted()

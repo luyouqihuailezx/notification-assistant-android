@@ -18,7 +18,8 @@ data class Notifications(
     var infoText: String? = null,
     var peopleList: String? = null,
     var titleBig: String? = null,
-    var isDeleted: Boolean = false
+    var isDeleted: Boolean = false,
+    var dateIndexVersion: Int = 0
 ) : IJsonSerializable {
     lateinit var packageName: ToOne<PackageName>
 
