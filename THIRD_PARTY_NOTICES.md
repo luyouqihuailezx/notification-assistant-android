@@ -2,16 +2,13 @@
 
 此文件记录直接依赖及已知运行时组件。每次升级 Gradle 依赖后，必须运行 `./gradlew licenseReleaseReport` 并复核生成的 APK 资产和本文件。
 
-## 发布阻断：ObjectBox
+## 授权结构
 
-当前构建使用 `io.objectbox:objectbox-android:5.0.1`。其 Java/Kotlin 绑定包含 Apache-2.0 组件，但 Android 原生运行库按 **ObjectBox Binary Licence** 提供。该许可包含非转让、可撤销、禁止逆向工程及其他专有条款，不能被当作 GPL-3.0-only 组件重新授权。
+项目源代码及其基于上游形成的衍生部分采用 `GPL-3.0-only`。ObjectBox Android 原生运行库不属于项目 GPL 授权范围，按 **ObjectBox Binary Licence** 单独授权；其他第三方组件也按各自许可证单独授权。分发 APK 时必须同时遵守这些组件各自的许可证和通知要求。
 
-因此，在以下任一项完成前，禁止把当前 APK 宣传或发布为“纯 GPL-3.0-only”软件，也不应投递到要求所有运行时组件均为自由软件的分发渠道：
+ObjectBox Binary Licence 适用于随 APK 分发的 ObjectBox Android 原生运行库。使用者不得将该组件重新标注为 GPL，不得删除其权利声明，且应直接遵守 ObjectBox Ltd. 发布的许可条款。
 
-1. 以 GPL 兼容的自由软件数据库替换 ObjectBox，并完成迁移与回归测试；或
-2. 从 ObjectBox Ltd. 获得明确覆盖当前版本、分发方式和 GPL 组合的书面兼容授权。
-
-该限制不改变上游 GPL 代码的许可；它说明当前二进制组合存在额外组件许可约束。
+该并列授权结构允许项目代码按 GPL-3.0-only 使用、修改和再分发；它不表示 ObjectBox 原生运行库获得 GPL 授权，也不改变其他第三方组件的独立许可。
 
 ## 已核验的直接组件
 

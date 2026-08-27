@@ -2,7 +2,7 @@
 
 通知助手是一款 Android 通知归档工具。它将获授权应用的通知保存在设备本地，支持搜索、删除、日历视图、加密导出与可选的通知智能体。
 
-> 发布状态：本仓库的源代码继承自 [Alfio010/notification-listener-android](https://github.com/Alfio010/notification-listener-android)，上游为 GPL-3.0。当前使用的 ObjectBox Android 原生运行库带有专有 Binary Licence，因此在替换该依赖或取得其与 GPL 兼容的授权前，**不得将当前构建产物标注为纯 GPL-3.0-only 发行版或发布到仅接受自由软件组件的渠道**。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+> 本仓库源代码继承自 [Alfio010/notification-listener-android](https://github.com/Alfio010/notification-listener-android)，项目代码采用 GPL-3.0-only。当前构建同时包含按 ObjectBox Binary Licence 授权的 ObjectBox Android 原生运行库，以及按各自许可证授权的其他第三方组件。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 功能
 
