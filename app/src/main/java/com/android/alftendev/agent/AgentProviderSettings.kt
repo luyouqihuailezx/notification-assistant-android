@@ -1,6 +1,7 @@
 package com.android.alftendev.agent
 
 import android.content.Context
+import android.net.Uri
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
@@ -35,16 +36,26 @@ class AgentProviderSettings(context: Context) {
     )
 
     fun save(useDeepSeek: Boolean, baseUrl: String, model: String, token: String) {
-        require(baseUrl.isNotBlank()) { "服务地址不能为空" }
+        val normalizedBaseUrl = validateBaseUrl(baseUrl)
         require(model.isNotBlank()) { "模型名称不能为空" }
         check(publicPreferences.edit()
             .putBoolean(USE_DEEPSEEK, useDeepSeek)
-            .putString(BASE_URL, baseUrl.trim().trimEnd('/'))
+            .putString(BASE_URL, normalizedBaseUrl)
             .putString(MODEL, model.trim())
             .commit()) { "保存智能体服务设置失败" }
         check(encryptedPreferences.edit().putString(TOKEN, token.trim()).commit()) {
             "保存智能体 API Token 失败"
         }
+    }
+
+    private fun validateBaseUrl(value: String): String {
+        val normalized = value.trim().trimEnd('/')
+        val uri = Uri.parse(normalized)
+        require(uri.scheme == "https" && !uri.host.isNullOrBlank()) {
+            "服务地址必须是包含主机名的 HTTPS 地址"
+        }
+        require(uri.userInfo.isNullOrBlank()) { "服务地址不能包含用户名或密码" }
+        return normalized
     }
 
     companion object {

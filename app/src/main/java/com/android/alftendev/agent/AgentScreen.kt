@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -82,6 +83,7 @@ fun NotificationAgentScreen(
     var revision by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var pendingQuestion by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
     val cancelled = remember { AtomicBoolean(false) }
     val listState = rememberLazyListState()
@@ -93,12 +95,17 @@ fun NotificationAgentScreen(
     revision
     val active = controller.active
 
-    fun send() {
+    fun requestSend() {
         val question = input.trim()
         if (question.isBlank() || running) return
+        pendingQuestion = question
+    }
+
+    fun sendConfirmed(question: String) {
         val userMessage = AgentMessage(role = AgentRole.USER, content = question)
         val conversation = active.messages + userMessage
         input = ""
+        pendingQuestion = null
         controller.updateActive {
             it.copy(
                 title = if (it.messages.isEmpty()) question.take(30) else it.title,
@@ -180,7 +187,7 @@ fun NotificationAgentScreen(
                         capitalization = KeyboardCapitalization.Sentences,
                         imeAction = ImeAction.Send
                     ),
-                    keyboardActions = KeyboardActions(onSend = { send() })
+                    keyboardActions = KeyboardActions(onSend = { requestSend() })
                 )
                 Spacer(Modifier.width(8.dp))
                 if (running) {
@@ -188,10 +195,27 @@ fun NotificationAgentScreen(
                         Text("停止")
                     }
                 } else {
-                    Button(onClick = ::send, enabled = input.isNotBlank()) { Text("发送") }
+                    Button(onClick = ::requestSend, enabled = input.isNotBlank()) { Text("发送") }
                 }
             }
         }
+    }
+    pendingQuestion?.let { question ->
+        AlertDialog(
+            onDismissRequest = { pendingQuestion = null },
+            title = { Text(stringResource(R.string.agent_privacy_consent_title)) },
+            text = { Text(stringResource(R.string.agent_privacy_consent_message)) },
+            confirmButton = {
+                TextButton(onClick = { sendConfirmed(question) }) {
+                    Text(stringResource(R.string.agent_privacy_consent_accept))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingQuestion = null }) {
+                    Text(stringResource(R.string.agent_privacy_consent_decline))
+                }
+            }
+        )
     }
     error?.let { ErrorDialog(it, onDismiss = { error = null }) }
 }

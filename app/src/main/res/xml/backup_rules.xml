@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <include domain="root" />
-    <include domain="file" />
-    <include domain="database" />
-    <include domain="sharedpref" />
-    <include domain="external" />
+    <!-- 通知、会话和 API Token 均不参与 Android 自动备份。 -->
+    <exclude domain="root" path="." />
 </full-backup-content>

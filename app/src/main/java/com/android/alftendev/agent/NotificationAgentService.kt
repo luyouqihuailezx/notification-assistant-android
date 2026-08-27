@@ -6,7 +6,9 @@ import com.android.alftendev.models.MessageDateSearchFilter
 import com.android.alftendev.utils.DBUtils
 import org.json.JSONArray
 import org.json.JSONObject
+import android.util.Log
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.time.Instant
 import java.text.SimpleDateFormat
@@ -88,6 +90,9 @@ class NotificationAgentService(private val settings: AgentProviderSettings) {
                 throw IllegalStateException("智能体服务请求失败（HTTP $status）：$body")
             }
             JSONObject(body)
+        } catch (error: SocketTimeoutException) {
+            Log.e("NotificationAgent", "智能体网络请求超时：${configuration.baseUrl}/chat/completions", error)
+            throw error
         } finally {
             connection.disconnect()
         }
@@ -185,7 +190,6 @@ class NotificationAgentService(private val settings: AgentProviderSettings) {
         if (reference == null) {
             val warning = "搜索工具参数警告：无法解析 date=$value，已忽略内容日期条件。"
             warnings += warning
-            println("[NotificationAgent] $warning")
             return null
         }
         return MessageDateSearchFilter(
@@ -219,7 +223,6 @@ class NotificationAgentService(private val settings: AgentProviderSettings) {
         if (date == null) {
             val warning = "搜索工具参数警告：无法解析 $field=$raw，已忽略该时间条件。"
             warnings += warning
-            println("[NotificationAgent] $warning")
             return null
         }
         val dateOnly = raw.matches(Regex("\\d{4}-\\d{1,2}-\\d{1,2}")) || raw.matches(Regex("\\d{4}年\\d{1,2}月\\d{1,2}日"))

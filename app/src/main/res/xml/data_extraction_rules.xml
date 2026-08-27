@@ -1,17 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
+    <!-- 通知、会话和 API Token 均不参与云备份或设备迁移。 -->
     <cloud-backup>
-        <include domain="root" />
-        <include domain="file" />
-        <include domain="database" />
-        <include domain="sharedpref" />
-        <include domain="external" />
+        <exclude domain="root" path="." />
     </cloud-backup>
     <device-transfer>
-        <include domain="root" />
-        <include domain="file" />
-        <include domain="database" />
-        <include domain="sharedpref" />
-        <include domain="external" />
+        <exclude domain="root" path="." />
     </device-transfer>
 </data-extraction-rules>

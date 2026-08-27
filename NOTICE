@@ -1,0 +1,12 @@
+通知助手 - 来源与归属声明
+
+本项目基于 Alfio010/notification-listener-android 的 GPL-3.0 源代码创建：
+https://github.com/Alfio010/notification-listener-android
+
+上游仓库声明采用 GNU General Public License version 3.0。上游项目用于保存和恢复 Android 设备通知。本仓库是独立维护的修改版本，新增或调整了中文本地化、通知日历、可选通知智能体、隐私提示和发布材料。
+
+本仓库保留上游 GPL-3.0 许可证文本。对上游源代码的修改应在分发时以 GPL-3.0-only 提供对应源码，并保留适用的版权和许可证声明。
+
+“Alfio010”“notification-listener-android”及相关名称仅用于事实性来源归属；不表示上游作者或权利人认可、赞助或支持本项目。本项目使用“通知助手”作为显示名称。
+
+第三方组件、版本和额外许可证见 THIRD_PARTY_NOTICES.md。

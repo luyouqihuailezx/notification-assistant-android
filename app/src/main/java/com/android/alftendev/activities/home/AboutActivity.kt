@@ -37,7 +37,8 @@ class AboutActivity : AppCompatActivity() {
             LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 item { TextButton({ Utils.openPlayStore(this@AboutActivity, BuildConfig.APPLICATION_ID) }) { Text("${getString(R.string.version)} ${BuildConfig.VERSION_NAME}\n${getString(R.string.rating)}") } }
                 item { LinkItem(R.string.github) { Utils.openLink(this@AboutActivity, "https://github.com/Alfio010/notification-listener-android") } }
-                item { LinkItem(R.string.privacy_policy) { Utils.openLink(this@AboutActivity, "https://alfio010.github.io/") } }
+                item { LicenseItem(R.string.privacy_policy, "file:///android_asset/privacy_policy.html") }
+                item { LicenseItem(R.string.source_notices, "file:///android_asset/source_notices.html") }
                 item { Text(stringResource(R.string.licenses)) }
                 item { LicenseItem(R.string.app_license, "file:///android_asset/gnu_license.html") }
                 item { LicenseItem(R.string.open_source_licenses, "file:///android_asset/open_source_licenses.html") }

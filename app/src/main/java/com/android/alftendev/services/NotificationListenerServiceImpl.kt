@@ -125,7 +125,7 @@ class NotificationListenerServiceImpl : NotificationListenerService() {
             )
 
             if (notification != null) {
-                LOGGER.log("SAVED NOTIFICATION: $notification")
+                LOGGER.log("已保存通知：package=${safeSbn.packageName}，timestamp=${safeSbn.notification.`when`}")
 
                 MyApplication.notifications.put(notification)
                 com.android.alftendev.utils.DBUtils.rebuildDateReferences(notification)

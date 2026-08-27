@@ -26,9 +26,9 @@ android {
         applicationId "com.alftendev.notlistener"
         minSdk 24
         targetSdk 36
-        versionCode 50
-        versionName "2.7.2"
-        // git commit -> git tag v2.6.1 -> git push --follow-tags origin tag v2.6.1
+        versionCode 51
+        versionName "2.8.0"
+        // 发布前请创建带签名的 Git 标签，例如 v2.8.0。
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 ////////
@@ -87,8 +87,7 @@ dependencies {
     implementation 'io.objectbox:objectbox-android:5.0.1'
     implementation 'org.apache.commons:commons-lang3:3.20.0'
 
-    // .\gradlew licenseReleaseReport
-    implementation 'com.jaredsburrows:gradle-license-plugin:0.9.8'
+    // 生成第三方许可证页面：./gradlew licenseReleaseReport
 
     implementation 'androidx.activity:activity-ktx:1.12.2'
 

@@ -1,49 +1,52 @@
-﻿# Notifications Recovery
+# 通知助手
 
- ![primo_piano.png](img/primo_piano.png)
+通知助手是一款 Android 通知归档工具。它将获授权应用的通知保存在设备本地，支持搜索、删除、日历视图、加密导出与可选的通知智能体。
 
-<br>
+> 发布状态：本仓库的源代码继承自 [Alfio010/notification-listener-android](https://github.com/Alfio010/notification-listener-android)，上游为 GPL-3.0。当前使用的 ObjectBox Android 原生运行库带有专有 Binary Licence，因此在替换该依赖或取得其与 GPL 兼容的授权前，**不得将当前构建产物标注为纯 GPL-3.0-only 发行版或发布到仅接受自由软件组件的渠道**。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-<p float="middle">
-  <img src="img/home.png" width="200" />
-  <img src="img/graph.png" width="200" />
-  <img src="img/search_screen.png" width="200" />
-  <img src="img/settings_screen.png" width="200" />
-</p>
+## 功能
 
-<h2> Description </h2>
+- 在获得系统通知访问权限后归档所选应用的通知。
+- 按应用、关键词和时间查看或删除通知；提供日历与小组件视图。
+- 导出为 AES 加密 ZIP，或导入此前导出的数据。
+- 可选智能体：由用户选择模型服务，检索与问题相关的本机通知后生成回答。
 
-This app saves your Android device`s notifications and allows you not to miss notifications that are accidentally deleted or that are deleted by the apps themselves. Feel free to recommend new features.
+## 安装与使用
 
-<h2>📲 Features</h2>
+1. 从 GitHub Releases 下载经核验的 APK，或按下文从源码构建。
+2. 首次启动时在系统设置中授予通知访问权限，并在应用内选择可收集通知的应用。
+3. 在“通知历史”中搜索、查看或删除记录；关闭“启用通知记录”只停止后续收集，不会自动删除历史数据。
+4. 导出时设置并妥善保存 ZIP 密码。通过系统分享面板交给其他应用后，文件的后续处理由所选目标应用负责。
+5. 智能体为可选功能。配置 HTTPS 模型端点和 API Token 后，每次发送前都会显示数据传输范围并要求确认。
 
-- **✅ Save Notifications** – Automatically stores notifications received on your Android device.  
-- **🔍 Search Notifications** – Easily find past notifications using keywords.  
-- **📂 Organized History** – View notifications grouped by apps for better readability.  
-- **🕒 Detailed Log** – See timestamps, app names, and notification content.  
-- **📊 Graphs** – See some notifications' stats from graph.  
-- **🔔 See Deleted Notifications** – See notifications that were accidentally or automatically deleted.  
-- **🌓 Dark Mode** – Enjoy a sleek UI with dark mode support.
-- **🔒 Secure Access** – Enable password or fingerprint authentication to access the app.
+## 智能体与网络
 
-<h2> Requirements </h2>
+普通通知归档不上传通知数据。只有在你主动确认并发送智能体请求时，应用才会向你配置的模型服务发送：
 
-* Android 7.0+
+- 你的问题和当前会话历史；
+- 模型为回答该问题而调用本机检索工具所返回的通知摘要，单次最多 50 条；
+- 每条摘要仅含应用名称/包名、标题、正文和时间。
 
-<h2> Info </h2>
+模型服务由你选择，第三方对接收数据的保存、训练或其他处理适用其自身政策。请不要将不可信、非 HTTPS 的服务地址用于智能体。完整规则见 [PRIVACY_POLICY.md](PRIVACY_POLICY.md)。
 
-This project use <a href="https://github.com/PhilJay/MPAndroidChart">MPAndroidChart</a> that is licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache LICENSE-2.0</a>
+## 从源码构建
 
-<h2> Download </h2>
+前提：Android Studio（支持 JDK 17）与 Android SDK 36。
 
-<p align="center">
-    <a href="https://apt.izzysoft.de/fdroid/index/apk/com.alftendev.notlistener">
-        <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" width="240" height="80">
-    </a>
-    <a href="https://play.google.com/store/apps/details?id=com.alftendev.notlistener">
-        <img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" alt="Get it on Google Play" width="240" height="80">
-    </a>
-    <a href="https://github.com/Alfio010/notification-listener-android/releases/latest">
-        <img src="img/get-it-on-github.png" alt="Get it on GitHub" width="240" height="80">
-    </a>
-</p>
+```bash
+./gradlew assembleDebug
+```
+
+生成的调试 APK 位于 `app/build/outputs/apk/debug/`。发布版本必须使用你自己的签名密钥；不要提交 `.jks`、API Token、导出 ZIP 或本地数据库。
+
+## 许可证与二次开发
+
+本仓库的上游源代码及其衍生部分按 [GPL-3.0-only](LICENSE) 提供。GPL-3.0-only 允许使用、修改、再分发和商业使用；分发修改版或 APK 时必须同时提供对应源码、保留版权与许可证声明，并以 GPL-3.0-only 继续授权。不能在这些 GPL 覆盖代码上追加“禁止商业使用”或“禁止盈利”限制。
+
+来源、修改声明和第三方组件见 [NOTICE](NOTICE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。上游名称仅用于事实性归属，不代表上游作者对本项目的认可或支持。
+
+## 隐私与安全
+
+通知库位于应用私有存储；智能体 Token 与会话使用 AndroidX 加密偏好设置。本应用不启用 Android 自动云备份或设备迁移备份。应用内“关于”页面可离线查看隐私政策、来源与许可证。
+
+请通过 GitHub Issues 报告一般问题；不要在公开 Issue 中附上通知正文、Token、导出文件或完整敏感日志。安全问题请先私下联系维护者（在建立官方仓库后配置 Security Advisories）。
