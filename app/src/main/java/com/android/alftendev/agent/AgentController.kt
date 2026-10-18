@@ -44,7 +44,12 @@ class AgentController(context: Context) {
     }
 
     fun updateActive(transform: (AgentSession) -> AgentSession) {
-        persist(sessions.map { if (it.id == activeId) transform(it) else it })
+        updateSession(activeId, transform)
+    }
+
+    fun updateSession(id: String, transform: (AgentSession) -> AgentSession) {
+        if (sessions.none { it.id == id }) return
+        persist(sessions.map { if (it.id == id) transform(it) else it })
     }
 
     private fun persist(updated: List<AgentSession>) {

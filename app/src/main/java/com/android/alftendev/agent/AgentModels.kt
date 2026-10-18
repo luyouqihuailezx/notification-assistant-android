@@ -6,11 +6,38 @@ import java.util.UUID
 
 enum class AgentRole { USER, ASSISTANT }
 
+data class AgentSource(
+    val notificationId: Long,
+    val app: String,
+    val title: String,
+    val body: String,
+    val time: Long
+) {
+    fun toJson() = JSONObject().apply {
+        put("notificationId", notificationId)
+        put("app", app)
+        put("title", title)
+        put("body", body)
+        put("time", time)
+    }
+
+    companion object {
+        fun fromJson(json: JSONObject) = AgentSource(
+            notificationId = json.optLong("notificationId"),
+            app = json.optString("app"),
+            title = json.optString("title"),
+            body = json.optString("body"),
+            time = json.optLong("time")
+        )
+    }
+}
+
 data class AgentMessage(
     val id: String = UUID.randomUUID().toString(),
     val role: AgentRole,
     val content: String,
     val reasoning: String? = null,
+    val sources: List<AgentSource> = emptyList(),
     val createdAt: Long = System.currentTimeMillis()
 ) {
     fun toJson() = JSONObject().apply {
@@ -18,6 +45,7 @@ data class AgentMessage(
         put("role", role.name)
         put("content", content)
         put("reasoning", reasoning)
+        put("sources", JSONArray(sources.map(AgentSource::toJson)))
         put("createdAt", createdAt)
     }
 
@@ -27,6 +55,9 @@ data class AgentMessage(
             role = AgentRole.valueOf(json.optString("role", AgentRole.USER.name)),
             content = json.optString("content"),
             reasoning = json.optString("reasoning").takeIf { it.isNotBlank() },
+            sources = json.optJSONArray("sources")?.let { array ->
+                List(array.length()) { AgentSource.fromJson(array.getJSONObject(it)) }
+            } ?: emptyList(),
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }

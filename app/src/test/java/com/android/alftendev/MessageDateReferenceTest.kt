@@ -15,7 +15,37 @@ class MessageDateReferenceTest {
     private val utc = TimeZone.getTimeZone("UTC")
 
     @Test fun indexVersionIsIncrementedForParserChanges() {
-        assertEquals(3, MessageDateReferenceParser.INDEX_VERSION)
+        assertEquals(4, MessageDateReferenceParser.INDEX_VERSION)
+    }
+
+    @Test fun weekQualifiedWeekdayUsesCurrentWeekAnchor() {
+        val thursday = format.parse("2026-09-10 09:00")!!
+        val cases = listOf(
+            "本周一上午10点开会" to "2026-09-07 10:00",
+            "下周一上午10点开会" to "2026-09-14 10:00",
+            "上周一上午10点开会" to "2026-08-31 10:00"
+        )
+        for ((text, expected) in cases) {
+            val references = MessageDateReferenceParser.referencesIn(text, thursday, utc)
+            assertTrue(
+                "$text -> ${references.joinToString { "${it.originalText}/${it.ruleId}/${it.resolvedDate?.let(format::format)}" }}",
+                references.any { it.ruleId == "weekday" && it.resolvedDate?.let(format::format) == expected }
+            )
+        }
+    }
+
+    @Test fun longRelativeDayOutranksNestedShortToken() {
+        val day = format.parse("2026-09-06 09:00")!!
+        val dayAfterTomorrow = MessageDateReferenceParser.referencesIn("大后天", day, utc)
+        assertEquals(
+            listOf("大后天"),
+            dayAfterTomorrow.map { it.originalText }
+        )
+        assertEquals("2026-09-09 00:00", format.format(requireNotNull(dayAfterTomorrow.first().resolvedDate)))
+
+        val threeDaysAgo = MessageDateReferenceParser.referencesIn("大前天", day, utc)
+        assertEquals(listOf("大前天"), threeDaysAgo.map { it.originalText })
+        assertEquals("2026-09-03 00:00", format.format(requireNotNull(threeDaysAgo.first().resolvedDate)))
     }
 
     @Test fun resolvesRelativeDateAndMarkedClock() {

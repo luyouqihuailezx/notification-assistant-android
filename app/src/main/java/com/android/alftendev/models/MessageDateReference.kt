@@ -49,7 +49,7 @@ data class MessageDateSearchFilter(
 
 object MessageDateReferenceParser {
     // 解析规则变化时递增，启动归档数据库会自动为历史通知重建日期索引。
-    const val INDEX_VERSION = 3
+    const val INDEX_VERSION = 4
 
     private data class Clock(val hour: Int? = null, val minute: Int? = null, val second: Int? = null)
     private data class Match(val text: String, val groups: List<String?>, val start: Int, val end: Int)
@@ -165,11 +165,23 @@ object MessageDateReferenceParser {
             }
         }
 
-        for ((token, offset, defaultTime) in relativeDays) {
+        val relativeDayRanges = mutableListOf<IntRange>()
+        for ((token, offset, defaultTime) in relativeDays.sortedByDescending { it.first.length }) {
             for (range in ranges(token, source)) {
+                val tokenRange = range.first until (range.first + token.length)
+                if (relativeDayRanges.any { rangesOverlap(it, tokenRange) }) continue
+                relativeDayRanges += tokenRange
                 val end = range.first + token.length
                 val base = startOfDay(add(referenceDate, Calendar.DAY_OF_YEAR, offset, timeZone), timeZone)
-                result += reference(source.substring(range.first, end), base, nearbyClock(source, end) ?: defaultTime, timeZone, 0, 1.0, "relative_day")
+                result += reference(
+                    source.substring(range.first, end),
+                    base,
+                    nearbyClock(source, end) ?: defaultTime,
+                    timeZone,
+                    0,
+                    1.0,
+                    "relative_day"
+                )
             }
         }
 
@@ -378,15 +390,27 @@ object MessageDateReferenceParser {
     private fun weekdayCandidates(weekday: Int, qualifier: String, referenceDate: Date, timeZone: TimeZone): List<Date> {
         val start = startOfDay(referenceDate, timeZone)
         val current = calendar(timeZone, start).get(Calendar.DAY_OF_WEEK)
+        val hasWeekQualifier = qualifier.contains("上") || qualifier.contains("下") ||
+            qualifier.contains("本") || qualifier.contains("这") ||
+            qualifier.contains("last") || qualifier.contains("next") || qualifier.contains("this")
+        if (hasWeekQualifier) {
+            val weekStart = isoWeekStart(referenceDate, timeZone)
+            val daysFromMonday = (weekday - Calendar.MONDAY + 7) % 7
+            val thisWeekTarget = add(weekStart, Calendar.DAY_OF_YEAR, daysFromMonday, timeZone)
+            if (qualifier.contains("上") || qualifier.contains("last")) {
+                return listOf(add(thisWeekTarget, Calendar.DAY_OF_YEAR, -7, timeZone))
+            }
+            if (qualifier.contains("下") || qualifier.contains("next")) {
+                return listOf(add(thisWeekTarget, Calendar.DAY_OF_YEAR, 7, timeZone))
+            }
+            return listOf(thisWeekTarget)
+        }
         val forward = (weekday - current + 7) % 7
-        val thisWeek = add(start, Calendar.DAY_OF_YEAR, forward, timeZone)
-        if (qualifier.contains("上") || qualifier.contains("last")) return listOf(add(thisWeek, Calendar.DAY_OF_YEAR, -7, timeZone))
-        if (qualifier.contains("下") || qualifier.contains("next")) return listOf(add(thisWeek, Calendar.DAY_OF_YEAR, 7, timeZone))
-        if (qualifier.contains("本") || qualifier.contains("这") || qualifier.contains("this")) return listOf(thisWeek)
-        val previous = add(thisWeek, Calendar.DAY_OF_YEAR, -7, timeZone)
-        val following = add(thisWeek, Calendar.DAY_OF_YEAR, 7, timeZone)
-        val nearest = listOf(previous, thisWeek, following).sortedBy { abs(it.time - referenceDate.time) }
-        return if (nearest[0] == thisWeek) listOf(thisWeek) else listOf(nearest[0], thisWeek)
+        val upcoming = add(start, Calendar.DAY_OF_YEAR, forward, timeZone)
+        val previous = add(upcoming, Calendar.DAY_OF_YEAR, -7, timeZone)
+        val following = add(upcoming, Calendar.DAY_OF_YEAR, 7, timeZone)
+        val nearest = listOf(previous, upcoming, following).sortedBy { abs(it.time - referenceDate.time) }
+        return if (nearest[0] == upcoming) listOf(upcoming) else listOf(nearest[0], upcoming)
     }
 
     private fun reference(text: String, date: Date?, time: Clock?, timeZone: TimeZone, rank: Int, weight: Double, ruleId: String): MessageDateReference {

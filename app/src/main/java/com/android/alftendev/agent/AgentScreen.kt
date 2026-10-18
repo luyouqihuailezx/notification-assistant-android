@@ -69,12 +69,29 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.android.alftendev.MyApplication
 import com.android.alftendev.R
+import com.android.alftendev.utils.DateUtils.dateFormatterCompact
+import androidx.compose.foundation.clickable
+import java.net.HttpURLConnection
+import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+
+private class AgentRequest(
+    val sessionId: String,
+    val cancelled: AtomicBoolean = AtomicBoolean(false),
+    val connection: AtomicReference<HttpURLConnection?> = AtomicReference(null)
+) {
+    fun cancel() {
+        cancelled.set(true)
+        connection.getAndSet(null)?.disconnect()
+    }
+}
 
 @Composable
 fun NotificationAgentScreen(
     controller: AgentController,
-    initialBottomPadding: Dp
+    initialBottomPadding: Dp,
+    onOpenNotification: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val imeBottomPadding = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
@@ -85,15 +102,24 @@ fun NotificationAgentScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var pendingQuestion by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
-    val cancelled = remember { AtomicBoolean(false) }
+    var activeRequest by remember { mutableStateOf<AgentRequest?>(null) }
     val listState = rememberLazyListState()
     DisposableEffect(controller) {
         val unsubscribe = controller.observe { revision++ }
-        onDispose { unsubscribe() }
+        onDispose {
+            unsubscribe()
+            activeRequest?.cancel()
+        }
     }
     @Suppress("UNUSED_EXPRESSION")
     revision
     val active = controller.active
+
+    fun stopRequest() {
+        activeRequest?.cancel()
+        activeRequest = null
+        running = false
+    }
 
     fun requestSend() {
         val question = input.trim()
@@ -102,45 +128,73 @@ fun NotificationAgentScreen(
     }
 
     fun sendConfirmed(question: String) {
+        val sessionId = active.id
         val userMessage = AgentMessage(role = AgentRole.USER, content = question)
         val conversation = active.messages + userMessage
         input = ""
         pendingQuestion = null
-        controller.updateActive {
+        controller.updateSession(sessionId) {
             it.copy(
                 title = if (it.messages.isEmpty()) question.take(30) else it.title,
                 messages = conversation,
                 updatedAt = System.currentTimeMillis()
             )
         }
+        val request = AgentRequest(sessionId = sessionId)
+        activeRequest = request
         running = true
-        cancelled.set(false)
         MyApplication.executor.execute {
-            runCatching { service.answer(conversation) }
+            runCatching {
+                service.answer(conversation, request.cancelled, request.connection)
+            }
                 .onSuccess { answer ->
-                    if (!cancelled.get()) {
-                        (context as? android.app.Activity)?.runOnUiThread {
-                            controller.updateActive {
-                                it.copy(
-                                    messages = it.messages + AgentMessage(
-                                        role = AgentRole.ASSISTANT,
-                                        content = answer.content,
-                                        reasoning = answer.reasoning
-                                    ),
-                                    updatedAt = System.currentTimeMillis()
-                                )
+                    (context as? android.app.Activity)?.runOnUiThread {
+                        if (activeRequest !== request || request.cancelled.get()) {
+                            if (activeRequest === request) {
+                                activeRequest = null
+                                running = false
                             }
+                            return@runOnUiThread
+                        }
+                        controller.updateSession(sessionId) {
+                            it.copy(
+                                messages = it.messages + AgentMessage(
+                                    role = AgentRole.ASSISTANT,
+                                    content = answer.content,
+                                    reasoning = answer.reasoning,
+                                    sources = answer.sources
+                                ),
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        }
+                        if (activeRequest === request) {
+                            activeRequest = null
                             running = false
                         }
                     }
                 }
                 .onFailure { throwable ->
-                    Log.e("NotificationAgent", "智能体调用失败", throwable)
-                    if (!cancelled.get()) {
+                    if (throwable is NotificationAgentService.CancelledException || request.cancelled.get()) {
                         (context as? android.app.Activity)?.runOnUiThread {
-                            error = throwable.stackTraceToString()
-                            running = false
+                            if (activeRequest === request) {
+                                activeRequest = null
+                                running = false
+                            }
                         }
+                        return@onFailure
+                    }
+                    Log.e("NotificationAgent", "智能体调用失败", throwable)
+                    (context as? android.app.Activity)?.runOnUiThread {
+                        if (activeRequest !== request || request.cancelled.get()) {
+                            if (activeRequest === request) {
+                                activeRequest = null
+                                running = false
+                            }
+                            return@runOnUiThread
+                        }
+                        error = throwable.stackTraceToString()
+                        activeRequest = null
+                        running = false
                     }
                 }
         }
@@ -163,8 +217,10 @@ fun NotificationAgentScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(active.messages, key = AgentMessage::id) { AgentBubble(it) }
-            if (running) item { LoadingReply { cancelled.set(true); running = false } }
+            items(active.messages, key = AgentMessage::id) { message ->
+                AgentBubble(message, onOpenNotification)
+            }
+            if (running) item { LoadingReply(::stopRequest) }
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -191,7 +247,7 @@ fun NotificationAgentScreen(
                 )
                 Spacer(Modifier.width(8.dp))
                 if (running) {
-                    FilledTonalButton(onClick = { cancelled.set(true); running = false }) {
+                    FilledTonalButton(onClick = ::stopRequest) {
                         Text("停止")
                     }
                 } else {
@@ -221,8 +277,9 @@ fun NotificationAgentScreen(
 }
 
 @Composable
-private fun AgentBubble(message: AgentMessage) {
+private fun AgentBubble(message: AgentMessage, onOpenNotification: (Long) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    var sourcesExpanded by remember { mutableStateOf(message.sources.size <= 3) }
     val isUser = message.role == AgentRole.USER
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (isUser) Alignment.End else Alignment.Start) {
         Card(
@@ -248,7 +305,60 @@ private fun AgentBubble(message: AgentMessage) {
                     Spacer(Modifier.height(8.dp))
                 }
                 MarkdownText(message.content)
+                if (!isUser && message.sources.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            if (message.sources.size == 1) "来源通知" else "来源候选（${message.sources.size}）",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        if (message.sources.size > 3) {
+                            TextButton(onClick = { sourcesExpanded = !sourcesExpanded }) {
+                                Text(if (sourcesExpanded) "收起" else "展开")
+                            }
+                        }
+                    }
+                    if (sourcesExpanded) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            message.sources.forEach { source ->
+                                SourceCard(source, onOpenNotification)
+                            }
+                        }
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun SourceCard(source: AgentSource, onOpenNotification: (Long) -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpenNotification(source.notificationId) }
+    ) {
+        Column(Modifier.padding(10.dp)) {
+            Text(source.app, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                source.title.ifBlank { "(无标题)" },
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (source.body.isNotBlank()) {
+                Text(source.body, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+                dateFormatterCompact(Date(source.time)),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

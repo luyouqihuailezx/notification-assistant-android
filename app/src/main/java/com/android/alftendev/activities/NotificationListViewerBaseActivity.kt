@@ -287,7 +287,21 @@ private fun NotificationHost(
                 onLongPress = { id -> selected = selected + id }
             )
             HostTab.AGENT -> Box(Modifier.fillMaxSize().padding(padding)) {
-                NotificationAgentScreen(agentController, padding.calculateBottomPadding())
+                NotificationAgentScreen(
+                    controller = agentController,
+                    initialBottomPadding = padding.calculateBottomPadding(),
+                    onOpenNotification = { id ->
+                        MyApplication.executor.execute {
+                            val record = DBUtils.notificationById(id)
+                            activity.runOnUiThread {
+                                record?.let { detail = it }
+                                    ?: run {
+                                        error = "无法打开通知 $id：记录不存在或已被删除\n\n完整错误信息：数据库中未找到通知 ID $id"
+                                    }
+                            }
+                        }
+                    }
+                )
             }
             HostTab.CALENDAR -> NotificationCalendarScreen(Modifier.fillMaxSize().padding(padding)) { id ->
                 MyApplication.executor.execute {
